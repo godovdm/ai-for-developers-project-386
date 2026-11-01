@@ -1,0 +1,29 @@
+[tools]
+node = "22.21.0"
+actionlint = "1.7.12"
+"npm:markdownlint-cli2" = "0.24.0"
+
+[tasks.check]
+description = "Run every quality gate for the project"
+depends = ["check:docs", "check:api", "check:backend", "check:frontend", "check:e2e"]
+run = "true"
+
+[tasks."check:docs"]
+description = "Check documentation and GitHub Actions workflows"
+run = "markdownlint-cli2 '**/*.md' '.github/**/*.md' && actionlint"
+
+[tasks."check:api"]
+description = "Fail closed until API checks are implemented with the contract"
+run = "test ! -d api || { echo 'api/ exists: implement TypeSpec, OpenAPI and generation checks before merging' >&2; exit 1; }"
+
+[tasks."check:backend"]
+description = "Fail closed until Go checks are implemented with the backend"
+run = "test ! -d backend || { echo 'backend/ exists: implement Go lint, build, race tests and govulncheck before merging' >&2; exit 1; }"
+
+[tasks."check:frontend"]
+description = "Fail closed until frontend checks are implemented with the frontend"
+run = "test ! -d frontend || { echo 'frontend/ exists: implement TypeScript lint, typecheck, tests, build and audit before merging' >&2; exit 1; }"
+
+[tasks."check:e2e"]
+description = "Fail closed until Playwright is implemented with the full application"
+run = "if [ -d backend ] && [ -d frontend ]; then echo 'backend/ and frontend/ exist: implement Playwright checks before merging' >&2; exit 1; fi"
