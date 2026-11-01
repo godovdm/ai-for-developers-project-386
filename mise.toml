@@ -3,6 +3,9 @@ node = "22.21.0"
 actionlint = "1.7.12"
 "npm:markdownlint-cli2" = "0.24.0"
 
+[settings]
+node.mirror_url = "https://npmmirror.com/mirrors/node/"
+
 [tasks.check]
 description = "Run every quality gate for the project"
 depends = ["check:docs", "check:api", "check:backend", "check:frontend", "check:e2e"]
