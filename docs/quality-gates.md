@@ -15,7 +15,7 @@
 | Корень проекта | Всегда | Markdown lint; `actionlint` для GitHub workflows |
 | `api/` | Каталог существует | Формат TypeSpec, компиляция и best practices; Redocly `recommended-strict` для OpenAPI; воспроизводимость сгенерированных OpenAPI, Go API и TypeScript SDK |
 | `backend/` | Каталог существует | Формат и импорты Go; строгий `golangci-lint`; сборка; тесты с детектором гонок; `govulncheck` |
-| `frontend/` | Каталог существует | Prettier; строгие ESLint и `vue-tsc`; Vitest; production build; `npm audit --audit-level=high` |
+| `frontend/` | Каталог существует | Prettier; строгие ESLint и `tsc`; Vitest; production build; `npm audit --audit-level=high` |
 | `backend/` и `frontend/` | Оба каталога существуют | Playwright: пути гостя и владельца в Chromium, Firefox и WebKit |
 
 Отсутствующий каталог пропускается. Появившийся каталог без манифеста, конфигурации
@@ -29,10 +29,10 @@ Go: `gofmt` и проверка импортов; `golangci-lint` с зафик�
 `errorlint`, `exhaustive`, `gosec`, `bodyclose`, `noctx` и `nilerr`. Находки
 блокируют проверку. Тесты запускаются командой `go test -race -count=1 ./...`.
 
-TypeScript и Vue: строгие настройки компилятора, включая проверки индексного
+TypeScript и React: строгие настройки компилятора, включая проверки индексного
 доступа и необязательных свойств; `typescript-eslint` с `strictTypeChecked` и
-`stylisticTypeChecked`; `eslint-plugin-vue` с `recommended-error`;
-`eslint --max-warnings 0`. Prettier проверяет формат, а `vue-tsc` — типы в
+`stylisticTypeChecked`; правила React и React Hooks;
+`eslint --max-warnings 0`. Prettier проверяет формат, а `tsc` — типы в
 компонентах. Необоснованный `any` запрещён.
 
 TypeSpec: `tsp format --check`, компиляция с `@typespec/best-practices/recommended`,
