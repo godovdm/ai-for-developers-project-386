@@ -1,0 +1,22 @@
+amends "package://github.com/jdx/hk/releases/download/v2.11.1/hk@2.11.1#/Config.pkl"
+
+hooks {
+    ["pre-commit"] {
+        steps {
+            ["secrets"] {
+                check = "betterleaks git --staged --redact --no-banner"
+            }
+            ["markdown"] {
+                glob = "**/*.md"
+                check = "markdownlint-cli2 {{ files }}"
+            }
+        }
+    }
+    ["pre-push"] {
+        steps {
+            ["check"] {
+                check = "mise --locked run check"
+            }
+        }
+    }
+}
