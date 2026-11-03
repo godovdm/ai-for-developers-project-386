@@ -1,6 +1,9 @@
 [tools]
 node = "22.21.0"
 actionlint = "1.7.12"
+hk = "2.11.1"
+"aqua:betterleaks/betterleaks" = "1.9.0"
+"github:agent-sh/agnix" = "0.60.3"
 "npm:markdownlint-cli2" = "0.24.0"
 go = "1.26.10"
 "npm:pnpm" = "10.20.0"
@@ -11,12 +14,20 @@ node.mirror_url = "https://npmmirror.com/mirrors/node/"
 
 [tasks.check]
 description = "Run every quality gate for the project"
-depends = ["check:docs", "check:api", "check:backend", "check:frontend", "check:e2e"]
+depends = ["check:docs", "check:secrets", "check:agents", "check:api", "check:backend", "check:frontend", "check:e2e"]
 run = "true"
 
 [tasks."check:docs"]
 description = "Check documentation and GitHub Actions workflows"
 run = "markdownlint-cli2 '**/*.md' '.github/**/*.md' && actionlint"
+
+[tasks."check:secrets"]
+description = "Scan tracked history and the working tree for secrets"
+run = "betterleaks git --redact --no-banner && betterleaks dir --redact --no-banner ."
+
+[tasks."check:agents"]
+description = "Validate agent instructions"
+run = "agnix --strict ."
 
 [tasks."check:api"]
 description = "Check TypeSpec, OpenAPI and generated code"
