@@ -2,6 +2,9 @@
 node = "22.21.0"
 actionlint = "1.7.12"
 "npm:markdownlint-cli2" = "0.24.0"
+go = "1.26.10"
+"npm:pnpm" = "10.20.0"
+golangci-lint = "2.12.2"
 
 [settings]
 node.mirror_url = "https://npmmirror.com/mirrors/node/"
@@ -16,17 +19,18 @@ description = "Check documentation and GitHub Actions workflows"
 run = "markdownlint-cli2 '**/*.md' '.github/**/*.md' && actionlint"
 
 [tasks."check:api"]
-description = "Fail closed until API checks are implemented with the contract"
-run = "test ! -d api || { echo 'api/ exists: implement TypeSpec, OpenAPI and generation checks before merging' >&2; exit 1; }"
+description = "Check TypeSpec, OpenAPI and generated code"
+run = "./node_modules/.bin/tsp format --check 'api/**/*.tsp' && ./node_modules/.bin/redocly lint --extends recommended-strict api/generated/openapi.yaml && sh scripts/check-generated.sh"
 
 [tasks."check:backend"]
-description = "Fail closed until Go checks are implemented with the backend"
-run = "test ! -d backend || { echo 'backend/ exists: implement Go lint, build, race tests and govulncheck before merging' >&2; exit 1; }"
+description = "Check and test the Go server"
+run = "sh scripts/check-backend.sh"
 
 [tasks."check:frontend"]
-description = "Fail closed until frontend checks are implemented with the frontend"
-run = "test ! -d frontend || { echo 'frontend/ exists: implement TypeScript lint, typecheck, tests, build and audit before merging' >&2; exit 1; }"
+description = "Check and build the frontend"
+run = "./node_modules/.bin/prettier --check frontend/index.html frontend/src/App.tsx frontend/src/App.test.tsx frontend/src/main.tsx && ./node_modules/.bin/eslint frontend/src --max-warnings 0 && pnpm typecheck && pnpm test && pnpm build && pnpm audit --audit-level high"
 
 [tasks."check:e2e"]
-description = "Fail closed until Playwright is implemented with the full application"
-run = "if [ -d backend ] && [ -d frontend ]; then echo 'backend/ and frontend/ exist: implement Playwright checks before merging' >&2; exit 1; fi"
+description = "Run browser smoke tests against the built application"
+depends = ["check:frontend"]
+run = "pnpm e2e"
