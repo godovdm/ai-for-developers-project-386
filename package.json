@@ -1,0 +1,51 @@
+{
+  "name": "meeting-calendar",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@mantine/core": "9.7.4",
+    "@mantine/hooks": "9.7.4",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@openapitools/openapi-generator-cli": "2.42.0",
+    "@playwright/test": "1.64.1",
+    "@redocly/cli": "2.73.0",
+    "@testing-library/jest-dom": "7.0.1",
+    "@testing-library/react": "16.3.3",
+    "@types/node": "22.20.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@typespec/compiler": "1.17.0",
+    "@typespec/http": "1.17.0",
+    "@typespec/openapi": "1.17.0",
+    "@typespec/openapi3": "1.17.0",
+    "@vitejs/plugin-react": "6.2.1",
+    "eslint": "9.39.5",
+    "eslint-plugin-react": "7.37.5",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "jsdom": "26.1.0",
+    "prettier": "3.9.10",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.72.1",
+    "vite": "8.3.5",
+    "vitest": "5.1.0"
+  },
+  "packageManager": "pnpm@10.20.0",
+  "scripts": {
+    "dev": "vite frontend --config vite.config.ts",
+    "build": "vite build frontend --config vite.config.ts",
+    "test": "vitest run frontend/src",
+    "typecheck": "tsc --noEmit",
+    "e2e": "playwright test"
+  },
+  "pnpm": {
+    "overrides": {
+      "basic-ftp": ">=6.2.1",
+      "undici": ">=7.30.1"
+    }
+  }
+}

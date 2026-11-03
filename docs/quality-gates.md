@@ -18,10 +18,10 @@ pre-commit проверяет секреты в индексе и изменён
 | Каталог | Условие включения | Обязательные проверки |
 | --- | --- | --- |
 | Корень проекта | Всегда | Markdown lint; `actionlint` для GitHub workflows |
-| `api/` | Каталог существует | Формат TypeSpec, компиляция и best practices; Redocly `recommended-strict` для OpenAPI; воспроизводимость сгенерированных OpenAPI, Go API и TypeScript SDK |
+| `api/` | Каталог существует | Формат TypeSpec и компиляция; Redocly `recommended-strict` для OpenAPI; воспроизводимость сгенерированных OpenAPI, Go API и TypeScript SDK |
 | `backend/` | Каталог существует | Формат и импорты Go; строгий `golangci-lint`; сборка; тесты с детектором гонок; `govulncheck` |
-| `frontend/` | Каталог существует | Prettier; строгие ESLint и `vue-tsc`; Vitest; production build; `npm audit --audit-level=high` |
-| `backend/` и `frontend/` | Оба каталога существуют | Playwright: пути гостя и владельца в Chromium, Firefox и WebKit |
+| `frontend/` | Каталог существует | Prettier; строгие ESLint и `tsc`; Vitest; production build; `pnpm audit --audit-level high` |
+| `backend/` и `frontend/` | Оба каталога существуют | Playwright: проверка связи клиента с сервером в Chromium, Firefox и WebKit |
 
 Отсутствующий каталог пропускается. Появившийся каталог без манифеста, конфигурации
 проверок или тестов приводит к ошибке. Добавление части приложения требует сразу
@@ -34,16 +34,20 @@ Go: `gofmt` и проверка импортов; `golangci-lint` с зафик�
 `errorlint`, `exhaustive`, `gosec`, `bodyclose`, `noctx` и `nilerr`. Находки
 блокируют проверку. Тесты запускаются командой `go test -race -count=1 ./...`.
 
-TypeScript и Vue: строгие настройки компилятора, включая проверки индексного
+TypeScript и React: строгие настройки компилятора, включая проверки индексного
 доступа и необязательных свойств; `typescript-eslint` с `strictTypeChecked` и
-`stylisticTypeChecked`; `eslint-plugin-vue` с `recommended-error`;
-`eslint --max-warnings 0`. Prettier проверяет формат, а `vue-tsc` — типы в
+`stylisticTypeChecked`; правила React и React Hooks;
+`eslint --max-warnings 0`. Prettier проверяет формат, а `tsc` — типы в
 компонентах. Необоснованный `any` запрещён.
 
-TypeSpec: `tsp format --check`, компиляция с `@typespec/best-practices/recommended`,
-затем Redocly `recommended-strict` проверяет сгенерированный OpenAPI. Генераторы
+TypeSpec: `tsp format --check`, компиляция, затем Redocly `recommended-strict` проверяет сгенерированный OpenAPI. Генераторы
 и их версии фиксируются; сравнение с отслеживаемыми файлами учитывает новые файлы
 и не меняет рабочее дерево.
+
+Набор `@typespec/best-practices/recommended` временно отключён: пакет
+несовместим с актуальным компилятором TypeSpec. Для служебного метода состояния
+Redocly адресно исключает правила о лицензии, авторизации и ответе 4XX: лицензия
+ещё не выбрана, метод публичный и не принимает данных.
 
 Сгенерированные Go и TypeScript файлы исключаются только из правил стиля. Они
 остаются в сборке и проверке типов. Подавление отдельного правила допускается
@@ -63,8 +67,9 @@ HTTP-тесты проверяют создание типа встречи, п�
 после ошибки. В тесте одновременной записи на один слот успешен ровно один запрос.
 
 Тесты frontend проверяют загрузку, отсутствие слотов, отправку формы, экран
-подтверждения и ошибку занятого слота. Playwright проходит путь гостя и страницу
-владельца через собранное приложение. Для тестов задаются контролируемое время и
+подтверждения и ошибку занятого слота. Пока сценарии бронирования не реализованы, Playwright проверяет связь клиента
+с сервером через собранное приложение. При их реализации добавляются пути гостя
+и владельца. Для тестов задаются контролируемое время и
 независимое начальное состояние; числовой порог покрытия не установлен.
 
 ## CI и версии
@@ -72,4 +77,4 @@ HTTP-тесты проверяют создание типа встречи, п�
 Новый workflow запускает `mise run check` на pull request и push в `main`.
 Его результат становится обязательной проверкой ветки. Существующий Hexlet
 workflow не меняется. Версии инструментов фиксируются через `mise.toml` и
-`mise.lock`; зависимости JavaScript — через lockfile и `npm ci`.
+`mise.lock`; зависимости JavaScript — через lockfile и `pnpm install --frozen-lockfile`.

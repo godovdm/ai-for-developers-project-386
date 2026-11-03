@@ -1,0 +1,35 @@
+openapi: 3.0.0
+info:
+  title: Meeting calendar API
+  version: 0.1.0
+tags: []
+paths:
+  /api/health:
+    get:
+      operationId: getHealth
+      summary: Check that the server is running
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+          description: The server is responding.
+      description: Health status of the server.
+servers:
+  - url: /
+    description: Same origin as the application
+    variables: {}

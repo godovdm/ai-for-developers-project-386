@@ -4,11 +4,19 @@
   },
   "overrides": [
     {
-      "filter": ["AGENTS.md"],
+      "filter": [
+        "AGENTS.md"
+      ],
       "config": {
         "MD041": false
       },
       "combine": "merge"
     }
+  ],
+  "ignores": [
+    "node_modules/**",
+    "test-results/**",
+    "playwright-report/**",
+    ".browser-cache/**"
   ]
 }
