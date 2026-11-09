@@ -20,4 +20,6 @@ jobs:
         with:
           version: 2026.10.24
           cache: false
+      - run: mise exec -- pnpm install --frozen-lockfile
+      - run: mise exec -- pnpm exec playwright install --with-deps chromium firefox webkit
       - run: mise --locked run check
