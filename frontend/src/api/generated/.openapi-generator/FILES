@@ -1,6 +1,10 @@
 apis/DefaultApi.ts
 apis/index.ts
 index.ts
+models/ApiError.ts
+models/CreateMeetingTypeRequest.ts
 models/HealthStatus.ts
+models/MeetingDuration.ts
+models/MeetingType.ts
 models/index.ts
 runtime.ts

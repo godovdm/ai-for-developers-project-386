@@ -1,9 +1,13 @@
-# The project has no selected license, and the public health endpoint accepts no input.
+# The project has no selected license, and the public endpoints accept no input
+# beyond the documented request body.
 # Authentication is intentionally absent in the current single-owner prototype.
 api/generated/openapi.yaml:
   info-license:
     - '#/info'
   operation-4xx-response:
     - '#/paths/~1api~1health/get/responses'
+    - '#/paths/~1api~1meeting-types/get/responses'
   security-defined:
     - '#/paths/~1api~1health/get'
+    - '#/paths/~1api~1meeting-types/get'
+    - '#/paths/~1api~1meeting-types/post'

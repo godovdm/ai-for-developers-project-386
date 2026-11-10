@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/godovdm/ai-for-developers-project-386/backend/internal/server"
+	"github.com/godovdm/ai-for-developers-project-386/backend/internal/web"
 )
 
 func main() {
@@ -17,7 +18,7 @@ func main() {
 	if dir == "" {
 		dir = "../frontend/dist"
 	}
-	mux.Handle("/", http.FileServer(http.Dir(dir)))
+	mux.Handle("/", web.SPA(dir))
 	log.Print("listening on http://localhost:8080")
 	srv := &http.Server{
 		Addr:              ":8080",

@@ -39,7 +39,7 @@ run = "sh scripts/check-backend.sh"
 
 [tasks."check:frontend"]
 description = "Check and build the frontend"
-run = "./node_modules/.bin/prettier --check frontend/index.html frontend/src/App.tsx frontend/src/App.test.tsx frontend/src/main.tsx && ./node_modules/.bin/eslint frontend/src --max-warnings 0 && pnpm typecheck && pnpm test && pnpm build && pnpm audit --audit-level high"
+run = "./node_modules/.bin/prettier --check frontend/index.html frontend/src && ./node_modules/.bin/eslint frontend/src --max-warnings 0 && pnpm typecheck && pnpm test && pnpm build && pnpm audit --audit-level high"
 
 [tasks."check:e2e"]
 description = "Run browser smoke tests against the built application"

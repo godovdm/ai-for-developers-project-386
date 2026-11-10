@@ -16,8 +16,74 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HealthStatus'
+  /api/meeting-types:
+    get:
+      operationId: listMeetingTypes
+      summary: List meeting types
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MeetingType'
+    post:
+      operationId: createMeetingType
+      summary: Create a meeting type
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeetingType'
+        '400':
+          description: API error with a human-readable message.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMeetingTypeRequest'
 components:
   schemas:
+    ApiError:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          description: Human-readable error message.
+      description: API error with a human-readable message.
+    CreateMeetingTypeRequest:
+      type: object
+      required:
+        - name
+        - description
+        - durationMinutes
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          description: Meeting type name.
+        description:
+          type: string
+          maxLength: 1000
+          description: Meeting type description.
+        durationMinutes:
+          allOf:
+            - $ref: '#/components/schemas/MeetingDuration'
+          description: Meeting duration in minutes.
+      description: Data required to create a meeting type.
     HealthStatus:
       type: object
       required:
@@ -29,6 +95,38 @@ components:
             - ok
           description: The server is responding.
       description: Health status of the server.
+    MeetingDuration:
+      type: number
+      enum:
+        - 30
+        - 60
+        - 90
+        - 120
+      description: Allowed meeting duration in minutes.
+    MeetingType:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - durationMinutes
+      properties:
+        id:
+          type: string
+          description: Unique meeting type identifier.
+        name:
+          type: string
+          maxLength: 100
+          description: Meeting type name.
+        description:
+          type: string
+          maxLength: 1000
+          description: Meeting type description.
+        durationMinutes:
+          allOf:
+            - $ref: '#/components/schemas/MeetingDuration'
+          description: Meeting duration in minutes.
+      description: A meeting type offered by the calendar owner.
 servers:
   - url: /
     description: Same origin as the application

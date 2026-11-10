@@ -15,6 +15,32 @@ const (
 	Ok HealthStatusStatus = "ok"
 )
 
+// Defines values for MeetingDuration.
+const (
+	N120 MeetingDuration = 120
+	N30  MeetingDuration = 30
+	N60  MeetingDuration = 60
+	N90  MeetingDuration = 90
+)
+
+// ApiError API error with a human-readable message.
+type ApiError struct {
+	// Message Human-readable error message.
+	Message string `json:"message"`
+}
+
+// CreateMeetingTypeRequest Data required to create a meeting type.
+type CreateMeetingTypeRequest struct {
+	// Description Meeting type description.
+	Description string `json:"description"`
+
+	// DurationMinutes Meeting duration in minutes.
+	DurationMinutes MeetingDuration `json:"durationMinutes"`
+
+	// Name Meeting type name.
+	Name string `json:"name"`
+}
+
 // HealthStatus Health status of the server.
 type HealthStatus struct {
 	// Status The server is responding.
@@ -24,11 +50,38 @@ type HealthStatus struct {
 // HealthStatusStatus The server is responding.
 type HealthStatusStatus string
 
+// MeetingDuration Allowed meeting duration in minutes.
+type MeetingDuration float32
+
+// MeetingType A meeting type offered by the calendar owner.
+type MeetingType struct {
+	// Description Meeting type description.
+	Description string `json:"description"`
+
+	// DurationMinutes Meeting duration in minutes.
+	DurationMinutes MeetingDuration `json:"durationMinutes"`
+
+	// Id Unique meeting type identifier.
+	Id string `json:"id"`
+
+	// Name Meeting type name.
+	Name string `json:"name"`
+}
+
+// CreateMeetingTypeJSONRequestBody defines body for CreateMeetingType for application/json ContentType.
+type CreateMeetingTypeJSONRequestBody = CreateMeetingTypeRequest
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Check that the server is running
 	// (GET /api/health)
 	GetHealth(w http.ResponseWriter, r *http.Request)
+	// List meeting types
+	// (GET /api/meeting-types)
+	ListMeetingTypes(w http.ResponseWriter, r *http.Request)
+	// Create a meeting type
+	// (POST /api/meeting-types)
+	CreateMeetingType(w http.ResponseWriter, r *http.Request)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -45,6 +98,34 @@ func (siw *ServerInterfaceWrapper) GetHealth(w http.ResponseWriter, r *http.Requ
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetHealth(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListMeetingTypes operation middleware
+func (siw *ServerInterfaceWrapper) ListMeetingTypes(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListMeetingTypes(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateMeetingType operation middleware
+func (siw *ServerInterfaceWrapper) CreateMeetingType(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateMeetingType(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -175,6 +256,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	}
 
 	m.HandleFunc("GET "+options.BaseURL+"/api/health", wrapper.GetHealth)
+	m.HandleFunc("GET "+options.BaseURL+"/api/meeting-types", wrapper.ListMeetingTypes)
+	m.HandleFunc("POST "+options.BaseURL+"/api/meeting-types", wrapper.CreateMeetingType)
 
 	return m
 }

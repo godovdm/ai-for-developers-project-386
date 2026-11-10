@@ -15,17 +15,69 @@
 
 import * as runtime from '../runtime';
 import type {
+  ApiError,
+  CreateMeetingTypeRequest,
   HealthStatus,
+  MeetingType,
 } from '../models/index';
 import {
+    ApiErrorFromJSON,
+    ApiErrorToJSON,
+    CreateMeetingTypeRequestFromJSON,
+    CreateMeetingTypeRequestToJSON,
     HealthStatusFromJSON,
     HealthStatusToJSON,
+    MeetingTypeFromJSON,
+    MeetingTypeToJSON,
 } from '../models/index';
+
+export interface CreateMeetingTypeOperationRequest {
+    createMeetingTypeRequest: CreateMeetingTypeRequest;
+}
 
 /**
  * 
  */
 export class DefaultApi extends runtime.BaseAPI {
+
+    /**
+     * Create a meeting type
+     */
+    async createMeetingTypeRaw(requestParameters: CreateMeetingTypeOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<MeetingType>> {
+        if (requestParameters['createMeetingTypeRequest'] == null) {
+            throw new runtime.RequiredError(
+                'createMeetingTypeRequest',
+                'Required parameter "createMeetingTypeRequest" was null or undefined when calling createMeetingType().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+
+        let urlPath = `/api/meeting-types`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: CreateMeetingTypeRequestToJSON(requestParameters['createMeetingTypeRequest']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => MeetingTypeFromJSON(jsonValue));
+    }
+
+    /**
+     * Create a meeting type
+     */
+    async createMeetingType(requestParameters: CreateMeetingTypeOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<MeetingType> {
+        const response = await this.createMeetingTypeRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
 
     /**
      * Check that the server is running
@@ -53,6 +105,35 @@ export class DefaultApi extends runtime.BaseAPI {
      */
     async getHealth(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<HealthStatus> {
         const response = await this.getHealthRaw(initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * List meeting types
+     */
+    async listMeetingTypesRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<MeetingType>>> {
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+
+        let urlPath = `/api/meeting-types`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(MeetingTypeFromJSON));
+    }
+
+    /**
+     * List meeting types
+     */
+    async listMeetingTypes(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<MeetingType>> {
+        const response = await this.listMeetingTypesRaw(initOverrides);
         return await response.value();
     }
 
