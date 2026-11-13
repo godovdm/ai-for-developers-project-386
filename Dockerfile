@@ -1,7 +1,7 @@
 FROM node:22.21.0-alpine AS frontend
 WORKDIR /app
 RUN corepack enable
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY frontend ./frontend
 COPY vite.config.ts tsconfig.json ./
