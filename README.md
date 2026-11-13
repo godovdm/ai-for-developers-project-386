@@ -126,6 +126,20 @@ mise run check
 проверка уязвимостей Go требуют подключения к сети. Состав проверок описан в
 [документе о проверках](docs/quality-gates.md).
 
+На macOS Firefox может завершаться с ошибкой `Could not find profile folder`,
+если у запущенного из терминала браузера нет доступа к общему каталогу данных
+Firefox. В этом случае запустите проверки с отдельным домашним каталогом для
+системных API macOS. Явный `JAVA_HOME` позволяет генератору API найти Java:
+
+```sh
+mkdir -p /private/tmp/calendar-firefox-home
+JAVA_HOME="$(/usr/libexec/java_home)" \
+  CFFIXED_USER_HOME=/private/tmp/calendar-firefox-home \
+  mise --locked run check
+```
+
+Подробнее об ошибке: [обсуждение в Playwright](https://github.com/microsoft/playwright/issues/42768).
+
 ## Проект
 
 Учебный проект [Хекслета](https://ru.hexlet.io/programs/ai-for-developers). [Исходное описание задания](https://files.hexlet.app/a/2ipc5m).
