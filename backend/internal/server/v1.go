@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/mail"
 	"regexp"
 	"strings"
 	"time"
@@ -120,10 +121,67 @@ func (s server) GetAvailability(w http.ResponseWriter, _ *http.Request, id strin
 		if date.Weekday() != time.Saturday && date.Weekday() != time.Sunday {
 			for minute := 10 * 60; minute+int(duration) <= 18*60; minute += 30 {
 				start := date.Add(time.Duration(minute) * time.Minute)
-				slots = append(slots, start.Format(time.RFC3339))
+				if s.v1.Available(start, start.Add(time.Duration(duration)*time.Minute)) {
+					slots = append(slots, start.Format(time.RFC3339))
+				}
 			}
 		}
 		days = append(days, generated.AvailabilityDay{Date: date.Format(time.DateOnly), Slots: slots})
 	}
 	writeJSON(w, http.StatusOK, generated.Availability{Days: days})
+}
+
+func (s server) CreateBooking(w http.ResponseWriter, r *http.Request) {
+	defer func() {
+		if err := r.Body.Close(); err != nil {
+			log.Printf("close request body: %v", err)
+		}
+	}()
+	var req generated.CreateBookingRequest
+	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, maxRequestBodySize))
+	decoder.DisallowUnknownFields()
+	var trailing json.RawMessage
+	if decoder.Decode(&req) != nil || !errors.Is(decoder.Decode(&trailing), io.EOF) {
+		writeV1Error(w, http.StatusBadRequest, "validation_error", "Некорректный запрос")
+		return
+	}
+	address, err := mail.ParseAddress(req.GuestEmail)
+	if strings.TrimSpace(req.GuestName) == "" || err != nil || address.Address != req.GuestEmail {
+		writeV1Error(w, http.StatusBadRequest, "validation_error", "Укажите имя и корректный email")
+		return
+	}
+	var item meeting.Type
+	for _, candidate := range s.v1.List() {
+		if candidate.ID == req.MeetingTypeId {
+			item = candidate
+			break
+		}
+	}
+	if item.ID == "" {
+		writeV1Error(w, http.StatusNotFound, "meeting_type_not_found", "Тип встречи не найден")
+		return
+	}
+	start, err := time.Parse(time.RFC3339, req.Start)
+	if err != nil {
+		writeV1Error(w, http.StatusBadRequest, "validation_error", "Некорректное время")
+		return
+	}
+	location, err := time.LoadLocation("Europe/Moscow")
+	if err != nil {
+		writeV1Error(w, http.StatusInternalServerError, "timezone_error", "Не удалось определить часовой пояс")
+		return
+	}
+	start = start.In(location)
+	now := s.now().In(location)
+	first := time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, location)
+	minute := start.Hour()*60 + start.Minute()
+	if start.Before(first) || !start.Before(first.AddDate(0, 0, 14)) || start.Weekday() == time.Saturday || start.Weekday() == time.Sunday || minute < 600 || minute+int(item.Duration) > 1080 || minute%30 != 0 || start.Second() != 0 || start.Nanosecond() != 0 {
+		writeV1Error(w, http.StatusBadRequest, "validation_error", "Недопустимое время записи")
+		return
+	}
+	if !s.v1.Reserve(meeting.Booking{Start: start, End: start.Add(time.Duration(item.Duration) * time.Minute), MeetingTypeID: item.ID, GuestName: strings.TrimSpace(req.GuestName), GuestEmail: req.GuestEmail}) {
+		writeV1Error(w, http.StatusConflict, "booking_conflict", "Это время уже занято")
+		return
+	}
+	writeJSON(w, http.StatusCreated, generated.BookingConfirmation{MeetingType: toV1(item), Start: start.Format(time.RFC3339)})
 }

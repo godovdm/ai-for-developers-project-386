@@ -18,6 +18,8 @@ import type {
   ApiError,
   ApiErrorV1,
   Availability,
+  BookingConfirmation,
+  CreateBookingRequest,
   CreateMeetingTypeRequest,
   CreateMeetingTypeV1Request,
   HealthStatus,
@@ -32,6 +34,10 @@ import {
     ApiErrorV1ToJSON,
     AvailabilityFromJSON,
     AvailabilityToJSON,
+    BookingConfirmationFromJSON,
+    BookingConfirmationToJSON,
+    CreateBookingRequestFromJSON,
+    CreateBookingRequestToJSON,
     CreateMeetingTypeRequestFromJSON,
     CreateMeetingTypeRequestToJSON,
     CreateMeetingTypeV1RequestFromJSON,
@@ -45,6 +51,10 @@ import {
     MeetingTypeV1FromJSON,
     MeetingTypeV1ToJSON,
 } from '../models/index';
+
+export interface CreateBookingOperationRequest {
+    createBookingRequest: CreateBookingRequest;
+}
 
 export interface CreateMeetingTypeOperationRequest {
     createMeetingTypeRequest: CreateMeetingTypeRequest;
@@ -68,6 +78,45 @@ export interface GetMeetingTypeV1Request {
  * 
  */
 export class DefaultApi extends runtime.BaseAPI {
+
+    /**
+     * Book an available meeting
+     */
+    async createBookingRaw(requestParameters: CreateBookingOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<BookingConfirmation>> {
+        if (requestParameters['createBookingRequest'] == null) {
+            throw new runtime.RequiredError(
+                'createBookingRequest',
+                'Required parameter "createBookingRequest" was null or undefined when calling createBooking().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+
+        let urlPath = `/api/v1/bookings`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: CreateBookingRequestToJSON(requestParameters['createBookingRequest']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => BookingConfirmationFromJSON(jsonValue));
+    }
+
+    /**
+     * Book an available meeting
+     */
+    async createBooking(requestParameters: CreateBookingOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<BookingConfirmation> {
+        const response = await this.createBookingRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
 
     /**
      * Create a meeting type

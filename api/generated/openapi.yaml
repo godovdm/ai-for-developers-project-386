@@ -53,6 +53,42 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CreateMeetingTypeRequest'
+  /api/v1/bookings:
+    post:
+      operationId: createBooking
+      summary: Book an available meeting
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingConfirmation'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorV1'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorV1'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorV1'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBookingRequest'
   /api/v1/meeting-types:
     get:
       operationId: listMeetingTypesV1
@@ -204,6 +240,34 @@ components:
           items:
             type: string
       description: Available starts for one calendar day in the owner's time zone.
+    BookingConfirmation:
+      type: object
+      required:
+        - meetingType
+        - start
+      properties:
+        meetingType:
+          $ref: '#/components/schemas/MeetingTypeV1'
+        start:
+          type: string
+      description: Confirmed booking details.
+    CreateBookingRequest:
+      type: object
+      required:
+        - meetingTypeId
+        - start
+        - guestName
+        - guestEmail
+      properties:
+        meetingTypeId:
+          type: string
+        start:
+          type: string
+        guestName:
+          type: string
+        guestEmail:
+          type: string
+      description: A guest's request to book an available start.
     CreateMeetingTypeRequest:
       type: object
       required:

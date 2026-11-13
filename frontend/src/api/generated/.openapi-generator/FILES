@@ -5,6 +5,8 @@ models/ApiError.ts
 models/ApiErrorV1.ts
 models/Availability.ts
 models/AvailabilityDay.ts
+models/BookingConfirmation.ts
+models/CreateBookingRequest.ts
 models/CreateMeetingTypeRequest.ts
 models/CreateMeetingTypeV1Request.ts
 models/HealthStatus.ts

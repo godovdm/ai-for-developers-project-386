@@ -48,6 +48,20 @@ type AvailabilityDay struct {
 	Slots []string `json:"slots"`
 }
 
+// BookingConfirmation Confirmed booking details.
+type BookingConfirmation struct {
+	MeetingType MeetingTypeV1 `json:"meetingType"`
+	Start       string        `json:"start"`
+}
+
+// CreateBookingRequest A guest's request to book an available start.
+type CreateBookingRequest struct {
+	GuestEmail    string `json:"guestEmail"`
+	GuestName     string `json:"guestName"`
+	MeetingTypeId string `json:"meetingTypeId"`
+	Start         string `json:"start"`
+}
+
 // CreateMeetingTypeRequest Data required to create a meeting type.
 type CreateMeetingTypeRequest struct {
 	// Description Meeting type description.
@@ -121,6 +135,9 @@ type GetAvailabilityParams struct {
 // CreateMeetingTypeJSONRequestBody defines body for CreateMeetingType for application/json ContentType.
 type CreateMeetingTypeJSONRequestBody = CreateMeetingTypeRequest
 
+// CreateBookingJSONRequestBody defines body for CreateBooking for application/json ContentType.
+type CreateBookingJSONRequestBody = CreateBookingRequest
+
 // CreateMeetingTypeV1JSONRequestBody defines body for CreateMeetingTypeV1 for application/json ContentType.
 type CreateMeetingTypeV1JSONRequestBody = CreateMeetingTypeV1Request
 
@@ -135,6 +152,9 @@ type ServerInterface interface {
 	// Create a meeting type
 	// (POST /api/meeting-types)
 	CreateMeetingType(w http.ResponseWriter, r *http.Request)
+	// Book an available meeting
+	// (POST /api/v1/bookings)
+	CreateBooking(w http.ResponseWriter, r *http.Request)
 	// List meeting types using API v1
 	// (GET /api/v1/meeting-types)
 	ListMeetingTypesV1(w http.ResponseWriter, r *http.Request)
@@ -191,6 +211,20 @@ func (siw *ServerInterfaceWrapper) CreateMeetingType(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CreateMeetingType(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateBooking operation middleware
+func (siw *ServerInterfaceWrapper) CreateBooking(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateBooking(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -420,6 +454,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/api/health", wrapper.GetHealth)
 	m.HandleFunc("GET "+options.BaseURL+"/api/meeting-types", wrapper.ListMeetingTypes)
 	m.HandleFunc("POST "+options.BaseURL+"/api/meeting-types", wrapper.CreateMeetingType)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/bookings", wrapper.CreateBooking)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/meeting-types", wrapper.ListMeetingTypesV1)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/meeting-types", wrapper.CreateMeetingTypeV1)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/meeting-types/{id}", wrapper.GetMeetingTypeV1)

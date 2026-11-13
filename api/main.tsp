@@ -184,3 +184,38 @@ op getAvailability(@path id: string, @query from?: string, @query to?: string):
       @statusCode statusCode: 404;
       @body body: ApiErrorV1;
     };
+
+@doc("A guest's request to book an available start.")
+model CreateBookingRequest {
+  meetingTypeId: string;
+  start: string;
+  guestName: string;
+  guestEmail: string;
+}
+
+@doc("Confirmed booking details.")
+model BookingConfirmation {
+  meetingType: MeetingTypeV1;
+  start: string;
+}
+
+@summary("Book an available meeting")
+@route("/api/v1/bookings")
+@post
+op createBooking(@body body: CreateBookingRequest):
+  | {
+      @statusCode statusCode: 201;
+      @body body: BookingConfirmation;
+    }
+  | {
+      @statusCode statusCode: 400;
+      @body body: ApiErrorV1;
+    }
+  | {
+      @statusCode statusCode: 404;
+      @body body: ApiErrorV1;
+    }
+  | {
+      @statusCode statusCode: 409;
+      @body body: ApiErrorV1;
+    };

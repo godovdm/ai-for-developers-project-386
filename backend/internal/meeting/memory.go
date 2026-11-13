@@ -3,6 +3,7 @@ package meeting
 import (
 	"strconv"
 	"sync"
+	"time"
 )
 
 // Repository stores meeting types.
@@ -13,9 +14,10 @@ type Repository interface {
 
 // Memory is a thread-safe in-memory meeting type repository.
 type Memory struct {
-	mu     sync.Mutex
-	nextID int
-	items  []Type
+	mu       sync.Mutex
+	nextID   int
+	items    []Type
+	bookings []Booking
 }
 
 // NewMemory returns an empty in-memory repository.
@@ -65,4 +67,38 @@ func (m *Memory) List() []Type {
 	items := make([]Type, len(m.items))
 	copy(items, m.items)
 	return items
+}
+
+// Booking represents a reserved interval.
+type Booking struct {
+	Start         time.Time
+	End           time.Time
+	MeetingTypeID string
+	GuestName     string
+	GuestEmail    string
+}
+
+// Reserve stores an interval only if it does not overlap any reservation.
+func (m *Memory) Reserve(booking Booking) bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, existing := range m.bookings {
+		if booking.Start.Before(existing.End) && existing.Start.Before(booking.End) {
+			return false
+		}
+	}
+	m.bookings = append(m.bookings, booking)
+	return true
+}
+
+// Available reports whether an interval is currently free.
+func (m *Memory) Available(start, end time.Time) bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, booking := range m.bookings {
+		if start.Before(booking.End) && booking.Start.Before(end) {
+			return false
+		}
+	}
+	return true
 }
