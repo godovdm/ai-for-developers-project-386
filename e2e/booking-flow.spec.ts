@@ -160,3 +160,33 @@ test("guest calendar refreshes at Moscow midnight and on return", async ({
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
   await expect(page.getByRole("button", { name: date })).toBeVisible();
 });
+
+test("guest calendar refreshes after the system clock changes", async ({
+  page,
+  request,
+}, testInfo) => {
+  const id = `clock-change-${testInfo.project.name}`;
+  const created = await request.post("/api/v1/meeting-types", {
+    data: {
+      id,
+      name: "Календарь после изменения часов",
+      description: "",
+      durationMinutes: 60,
+    },
+  });
+  expect(created.status()).toBe(201);
+  await page.clock.install({ time: new Date("2026-11-13T12:00:00Z") });
+  let date = "2026-11-13";
+  await page.route(
+    `**/api/v1/meeting-types/${id}/availability`,
+    async (route) => {
+      await route.fulfill({ json: { days: [{ date, slots: [] }] } });
+    },
+  );
+  await page.goto(`/meeting-types/${id}`);
+  await expect(page.getByRole("button", { name: date })).toBeVisible();
+  date = "2026-11-14";
+  await page.clock.setSystemTime(new Date("2026-11-14T12:00:00Z"));
+  await page.clock.fastForward(30_000);
+  await expect(page.getByRole("button", { name: date })).toBeVisible();
+});

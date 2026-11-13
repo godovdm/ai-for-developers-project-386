@@ -31,7 +31,7 @@ export function MeetingTypePage({ id }: MeetingTypePageProps) {
       const moscowTime = now.getTime() + 3 * 60 * 60_000;
       timer = window.setTimeout(
         updateDay,
-        86_400_000 - (moscowTime % 86_400_000),
+        Math.min(30_000, 86_400_000 - (moscowTime % 86_400_000)),
       );
     };
     updateDay();
