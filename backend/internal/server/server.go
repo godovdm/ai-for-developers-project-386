@@ -24,11 +24,13 @@ type createMeetingTypeRequest struct {
 
 type server struct {
 	meetingTypes meeting.Repository
+	v1           *meeting.Memory
 }
 
 // New returns the calendar API handler.
 func New() http.Handler {
-	return generated.Handler(server{meetingTypes: meeting.NewMemory()})
+	store := meeting.NewMemory()
+	return generated.Handler(server{meetingTypes: store, v1: store})
 }
 
 func (server) GetHealth(w http.ResponseWriter, _ *http.Request) {

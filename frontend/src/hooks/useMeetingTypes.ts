@@ -13,9 +13,9 @@ export function useMeetingTypes() {
 
   useEffect(() => {
     let active = true;
-    void api.listMeetingTypes().then(
-      (meetingTypes) => {
-        if (active) setState({ status: "ready", meetingTypes });
+    void api.listMeetingTypesV1().then(
+      ({ items }) => {
+        if (active) setState({ status: "ready", meetingTypes: items });
       },
       () => {
         if (active) setState({ status: "error" });

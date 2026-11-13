@@ -2,9 +2,13 @@ apis/DefaultApi.ts
 apis/index.ts
 index.ts
 models/ApiError.ts
+models/ApiErrorV1.ts
 models/CreateMeetingTypeRequest.ts
+models/CreateMeetingTypeV1Request.ts
 models/HealthStatus.ts
 models/MeetingDuration.ts
 models/MeetingType.ts
+models/MeetingTypeListV1.ts
+models/MeetingTypeV1.ts
 models/index.ts
 runtime.ts

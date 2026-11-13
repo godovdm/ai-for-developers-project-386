@@ -34,14 +34,16 @@ it("shows the guest page with meeting types after loading", async () => {
 
   await act(async () => {
     resolveFetch?.(
-      jsonResponse([
-        {
-          id: "1",
-          name: "Вводный звонок",
-          description: "Знакомство с командой",
-          durationMinutes: MeetingDuration.NUMBER_60,
-        },
-      ]),
+      jsonResponse({
+        items: [
+          {
+            id: "1",
+            name: "Вводный звонок",
+            description: "Знакомство с командой",
+            durationMinutes: MeetingDuration.NUMBER_60,
+          },
+        ],
+      }),
     );
     await Promise.resolve();
   });
@@ -59,7 +61,7 @@ it("shows the guest page with meeting types after loading", async () => {
 it("shows the empty state and keeps the owner link", async () => {
   vi.stubGlobal(
     "fetch",
-    vi.fn<typeof fetch>().mockResolvedValue(jsonResponse([])),
+    vi.fn<typeof fetch>().mockResolvedValue(jsonResponse({ items: [] })),
   );
 
   renderApp("/");
@@ -86,14 +88,16 @@ it("shows an error and retries loading meeting types", async () => {
     .fn<typeof fetch>()
     .mockRejectedValueOnce(new TypeError("offline"))
     .mockResolvedValueOnce(
-      jsonResponse([
-        {
-          id: "1",
-          name: "Вводный звонок",
-          description: "Знакомство с командой",
-          durationMinutes: MeetingDuration.NUMBER_30,
-        },
-      ]),
+      jsonResponse({
+        items: [
+          {
+            id: "1",
+            name: "Вводный звонок",
+            description: "Знакомство с командой",
+            durationMinutes: MeetingDuration.NUMBER_30,
+          },
+        ],
+      }),
     );
   vi.stubGlobal("fetch", fetchMock);
 

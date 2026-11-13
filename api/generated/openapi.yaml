@@ -53,6 +53,78 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CreateMeetingTypeRequest'
+  /api/v1/meeting-types:
+    get:
+      operationId: listMeetingTypesV1
+      summary: List meeting types using API v1
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeetingTypeListV1'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorV1'
+    post:
+      operationId: createMeetingTypeV1
+      summary: Create a meeting type using API v1
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeetingTypeV1'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorV1'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorV1'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMeetingTypeV1Request'
+  /api/v1/meeting-types/{id}:
+    get:
+      operationId: getMeetingTypeV1
+      summary: Get a meeting type using API v1
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeetingTypeV1'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorV1'
+security:
+  - {}
 components:
   schemas:
     ApiError:
@@ -64,6 +136,16 @@ components:
           type: string
           description: Human-readable error message.
       description: API error with a human-readable message.
+    ApiErrorV1:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
     CreateMeetingTypeRequest:
       type: object
       required:
@@ -84,6 +166,29 @@ components:
             - $ref: '#/components/schemas/MeetingDuration'
           description: Meeting duration in minutes.
       description: Data required to create a meeting type.
+    CreateMeetingTypeV1Request:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - durationMinutes
+      properties:
+        id:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: ^[a-z0-9]([a-z0-9-]{0,62}[a-z0-9])?$
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 2000
+        durationMinutes:
+          $ref: '#/components/schemas/MeetingDuration'
+      description: Meeting type creation using an owner-supplied identifier.
     HealthStatus:
       type: object
       required:
@@ -127,6 +232,31 @@ components:
             - $ref: '#/components/schemas/MeetingDuration'
           description: Meeting duration in minutes.
       description: A meeting type offered by the calendar owner.
+    MeetingTypeListV1:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MeetingTypeV1'
+    MeetingTypeV1:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - durationMinutes
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        durationMinutes:
+          $ref: '#/components/schemas/MeetingDuration'
 servers:
   - url: /
     description: Same origin as the application

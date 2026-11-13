@@ -42,6 +42,7 @@ function parseDuration(value: string): MeetingDuration {
 
 export function OwnerPage() {
   const { state, reload } = useMeetingTypes();
+  const [id, setId] = useState("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [duration, setDuration] = useState<MeetingDuration>(
@@ -55,13 +56,15 @@ export function OwnerPage() {
     setSubmitting(true);
     setError(null);
     try {
-      await api.createMeetingType({
-        createMeetingTypeRequest: {
+      await api.createMeetingTypeV1({
+        createMeetingTypeV1Request: {
+          id,
           name,
           description,
           durationMinutes: duration,
         },
       });
+      setId("");
       setName("");
       setDescription("");
       setDuration(MeetingDuration.NUMBER_60);
@@ -87,6 +90,16 @@ export function OwnerPage() {
                 Новый тип встречи
               </Title>
               <TextInput
+                label="ID"
+                value={id}
+                maxLength={64}
+                required
+                pattern="[a-z0-9]([a-z0-9-]{0,62}[a-z0-9])?"
+                onChange={(event) => {
+                  setId(event.currentTarget.value);
+                }}
+              />
+              <TextInput
                 label="Название"
                 value={name}
                 maxLength={100}
@@ -98,8 +111,7 @@ export function OwnerPage() {
               <Textarea
                 label="Описание"
                 value={description}
-                maxLength={1000}
-                required
+                maxLength={2000}
                 minRows={3}
                 onChange={(event) => {
                   setDescription(event.currentTarget.value);

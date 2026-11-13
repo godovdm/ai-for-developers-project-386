@@ -27,10 +27,35 @@ func NewMemory() *Memory {
 func (m *Memory) Create(meetingType Type) Type {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.nextID++
-	meetingType.ID = strconv.Itoa(m.nextID)
+	for {
+		m.nextID++
+		meetingType.ID = strconv.Itoa(m.nextID)
+		found := false
+		for _, item := range m.items {
+			if item.ID == meetingType.ID {
+				found = true
+				break
+			}
+		}
+		if !found {
+			break
+		}
+	}
 	m.items = append(m.items, meetingType)
 	return meetingType
+}
+
+// CreateWithID stores a meeting type if its identifier is unique.
+func (m *Memory) CreateWithID(meetingType Type) bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, item := range m.items {
+		if item.ID == meetingType.ID {
+			return false
+		}
+	}
+	m.items = append(m.items, meetingType)
+	return true
 }
 
 // List returns the meeting types in creation order.

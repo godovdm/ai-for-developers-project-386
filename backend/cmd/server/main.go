@@ -19,9 +19,13 @@ func main() {
 		dir = "../frontend/dist"
 	}
 	mux.Handle("/", web.SPA(dir))
-	log.Print("listening on http://localhost:8080")
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	log.Print("starting server")
 	srv := &http.Server{
-		Addr:              ":8080",
+		Addr:              ":" + port,
 		Handler:           mux,
 		ReadHeaderTimeout: 5 * time.Second,
 	}

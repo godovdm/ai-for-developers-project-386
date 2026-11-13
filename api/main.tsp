@@ -5,6 +5,7 @@ import "@typespec/openapi3";
 using TypeSpec.Http;
 
 @service(#{ title: "Meeting calendar API" })
+@useAuth(NoAuth)
 @OpenAPI.info(#{ version: "0.1.0" })
 @server("/", "Same origin as the application")
 namespace Calendar;
@@ -91,3 +92,74 @@ op createMeetingType(@body body: CreateMeetingTypeRequest):
       @body body: MeetingType;
     }
   | ApiError;
+
+@doc("Meeting type creation using an owner-supplied identifier.")
+model CreateMeetingTypeV1Request {
+  @minLength(1)
+  @maxLength(64)
+  @pattern("^[a-z0-9]([a-z0-9-]{0,62}[a-z0-9])?$")
+  id: string;
+
+  @minLength(1)
+  @maxLength(100)
+  name: string;
+
+  @maxLength(2000)
+  description: string;
+
+  durationMinutes: MeetingDuration;
+}
+
+model MeetingTypeV1 {
+  id: string;
+  name: string;
+  description: string;
+  durationMinutes: MeetingDuration;
+}
+
+model MeetingTypeListV1 {
+  items: MeetingTypeV1[];
+}
+
+@error
+model ApiErrorV1 {
+  code: string;
+  message: string;
+}
+
+@summary("List meeting types using API v1")
+@route("/api/v1/meeting-types")
+@get
+op listMeetingTypesV1():
+  | MeetingTypeListV1
+  | {
+      @statusCode statusCode: 400;
+      @body body: ApiErrorV1;
+    };
+
+@summary("Create a meeting type using API v1")
+@route("/api/v1/meeting-types")
+@post
+op createMeetingTypeV1(@body body: CreateMeetingTypeV1Request):
+  | {
+      @statusCode statusCode: 201;
+      @body body: MeetingTypeV1;
+    }
+  | {
+      @statusCode statusCode: 400;
+      @body body: ApiErrorV1;
+    }
+  | {
+      @statusCode statusCode: 409;
+      @body body: ApiErrorV1;
+    };
+
+@summary("Get a meeting type using API v1")
+@route("/api/v1/meeting-types/{id}")
+@get
+op getMeetingTypeV1(@path id: string):
+  | MeetingTypeV1
+  | {
+      @statusCode statusCode: 404;
+      @body body: ApiErrorV1;
+    };

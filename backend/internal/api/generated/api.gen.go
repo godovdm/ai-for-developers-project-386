@@ -8,6 +8,8 @@ package generated
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/oapi-codegen/runtime"
 )
 
 // Defines values for HealthStatusStatus.
@@ -29,6 +31,12 @@ type ApiError struct {
 	Message string `json:"message"`
 }
 
+// ApiErrorV1 defines model for ApiErrorV1.
+type ApiErrorV1 struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
 // CreateMeetingTypeRequest Data required to create a meeting type.
 type CreateMeetingTypeRequest struct {
 	// Description Meeting type description.
@@ -39,6 +47,16 @@ type CreateMeetingTypeRequest struct {
 
 	// Name Meeting type name.
 	Name string `json:"name"`
+}
+
+// CreateMeetingTypeV1Request Meeting type creation using an owner-supplied identifier.
+type CreateMeetingTypeV1Request struct {
+	Description string `json:"description"`
+
+	// DurationMinutes Allowed meeting duration in minutes.
+	DurationMinutes MeetingDuration `json:"durationMinutes"`
+	Id              string          `json:"id"`
+	Name            string          `json:"name"`
 }
 
 // HealthStatus Health status of the server.
@@ -68,8 +86,26 @@ type MeetingType struct {
 	Name string `json:"name"`
 }
 
+// MeetingTypeListV1 defines model for MeetingTypeListV1.
+type MeetingTypeListV1 struct {
+	Items []MeetingTypeV1 `json:"items"`
+}
+
+// MeetingTypeV1 defines model for MeetingTypeV1.
+type MeetingTypeV1 struct {
+	Description string `json:"description"`
+
+	// DurationMinutes Allowed meeting duration in minutes.
+	DurationMinutes MeetingDuration `json:"durationMinutes"`
+	Id              string          `json:"id"`
+	Name            string          `json:"name"`
+}
+
 // CreateMeetingTypeJSONRequestBody defines body for CreateMeetingType for application/json ContentType.
 type CreateMeetingTypeJSONRequestBody = CreateMeetingTypeRequest
+
+// CreateMeetingTypeV1JSONRequestBody defines body for CreateMeetingTypeV1 for application/json ContentType.
+type CreateMeetingTypeV1JSONRequestBody = CreateMeetingTypeV1Request
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -82,6 +118,15 @@ type ServerInterface interface {
 	// Create a meeting type
 	// (POST /api/meeting-types)
 	CreateMeetingType(w http.ResponseWriter, r *http.Request)
+	// List meeting types using API v1
+	// (GET /api/v1/meeting-types)
+	ListMeetingTypesV1(w http.ResponseWriter, r *http.Request)
+	// Create a meeting type using API v1
+	// (POST /api/v1/meeting-types)
+	CreateMeetingTypeV1(w http.ResponseWriter, r *http.Request)
+	// Get a meeting type using API v1
+	// (GET /api/v1/meeting-types/{id})
+	GetMeetingTypeV1(w http.ResponseWriter, r *http.Request, id string)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -126,6 +171,59 @@ func (siw *ServerInterfaceWrapper) CreateMeetingType(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CreateMeetingType(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListMeetingTypesV1 operation middleware
+func (siw *ServerInterfaceWrapper) ListMeetingTypesV1(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListMeetingTypesV1(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateMeetingTypeV1 operation middleware
+func (siw *ServerInterfaceWrapper) CreateMeetingTypeV1(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateMeetingTypeV1(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetMeetingTypeV1 operation middleware
+func (siw *ServerInterfaceWrapper) GetMeetingTypeV1(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetMeetingTypeV1(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -258,6 +356,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/api/health", wrapper.GetHealth)
 	m.HandleFunc("GET "+options.BaseURL+"/api/meeting-types", wrapper.ListMeetingTypes)
 	m.HandleFunc("POST "+options.BaseURL+"/api/meeting-types", wrapper.CreateMeetingType)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/meeting-types", wrapper.ListMeetingTypesV1)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/meeting-types", wrapper.CreateMeetingTypeV1)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/meeting-types/{id}", wrapper.GetMeetingTypeV1)
 
 	return m
 }

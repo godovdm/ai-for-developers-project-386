@@ -25,8 +25,16 @@
 ## API
 
 - `GET /api/health` — проверка доступности сервера.
-- `GET /api/meeting-types` — список типов встреч.
-- `POST /api/meeting-types` — создание типа встречи с названием, описанием и длительностью 30, 60, 90 или 120 минут. Некорректные данные возвращают ответ `400` с понятным сообщением.
+- `GET /api/v1/meeting-types` — список типов встреч в поле `items`.
+- `GET /api/v1/meeting-types/{id}` — тип встречи по идентификатору.
+- `POST /api/v1/meeting-types` — создание типа с вручную введённым `id`, названием, описанием и длительностью 30, 60, 90 или 120 минут. При ошибке валидации возвращается `400`, при повторном `id` — `409`.
+
+Проверка API после запуска сервера:
+
+```sh
+curl -i -X POST http://localhost:8080/api/v1/meeting-types -H 'Content-Type: application/json' -d '{"id":"intro","name":"Знакомство","description":"","durationMinutes":30}'
+curl -i http://localhost:8080/api/v1/meeting-types
+```
 
 Типы встреч хранятся в памяти процесса и сбрасываются при перезапуске.
 
@@ -67,6 +75,16 @@ GLOSSARY.md                # термины предметной области
 ```
 
 Каталоги в схеме появятся по мере реализации. TypeSpec — источник истины для API; сгенерированные OpenAPI, SDK и Go-код не редактируются вручную. Версии генераторов зафиксированы; для строгой проверки TypeScript к сгенерированному SDK автоматически применяется скрипт совместимости `scripts/patch-sdk.mjs`.
+
+Для генерации и проверки артефактов после изменения TypeSpec:
+
+```sh
+mise exec -- tsp compile api --output-dir api/generated
+(cd backend && mise exec -- go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.5.1 -generate types,std-http-server -package generated ../api/generated/openapi.yaml > internal/api/generated/api.gen.go)
+mise exec -- openapi-generator-cli generate -i api/generated/openapi.yaml -g typescript-fetch -o frontend/src/api/generated --additional-properties=supportsES6=true,typescriptThreePlus=true --global-property apis,models,supportingFiles=runtime.ts:index.ts
+node scripts/patch-sdk.mjs frontend/src/api/generated/runtime.ts
+mise exec -- sh scripts/check-generated.sh
+```
 
 ## Ограничения
 

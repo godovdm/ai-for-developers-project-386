@@ -23,9 +23,9 @@ it("creates a meeting type and refreshes the list", async () => {
   const fetchMock = vi.fn<typeof fetch>().mockImplementation((input, init) => {
     const method = init?.method ?? "GET";
     const url = requestUrl(input);
-    if (url.endsWith("/api/meeting-types") && method === "POST") {
+    if (url.endsWith("/api/v1/meeting-types") && method === "POST") {
       const created: MeetingType = {
-        id: "1",
+        id: "intro",
         name: "Вводный звонок",
         description: "Знакомство с командой",
         durationMinutes: MeetingDuration.NUMBER_60,
@@ -33,8 +33,8 @@ it("creates a meeting type and refreshes the list", async () => {
       meetingTypes = [created];
       return Promise.resolve(jsonResponse(created, 201));
     }
-    if (url.endsWith("/api/meeting-types") && method === "GET") {
-      return Promise.resolve(jsonResponse(meetingTypes));
+    if (url.endsWith("/api/v1/meeting-types") && method === "GET") {
+      return Promise.resolve(jsonResponse({ items: meetingTypes }));
     }
     return Promise.resolve(jsonResponse({ message: "not found" }, 404));
   });
@@ -44,6 +44,7 @@ it("creates a meeting type and refreshes the list", async () => {
 
   expect(await screen.findByText("Пока нет типов встреч")).toBeInTheDocument();
 
+  fireEvent.change(screen.getByLabelText(/ID/), { target: { value: "intro" } });
   fireEvent.change(screen.getByLabelText(/Название/), {
     target: { value: "Вводный звонок" },
   });
@@ -70,6 +71,7 @@ it("creates a meeting type and refreshes the list", async () => {
   }
   const body: unknown = JSON.parse(requestBody);
   expect(body).toMatchObject({
+    id: "intro",
     name: "Вводный звонок",
     description: "Знакомство с командой",
     durationMinutes: MeetingDuration.NUMBER_60,
@@ -79,12 +81,15 @@ it("creates a meeting type and refreshes the list", async () => {
 it("shows the server validation message and keeps the list unchanged", async () => {
   const fetchMock = vi.fn<typeof fetch>().mockImplementation((input, init) => {
     const method = init?.method ?? "GET";
-    if (requestUrl(input).endsWith("/api/meeting-types") && method === "POST") {
+    if (
+      requestUrl(input).endsWith("/api/v1/meeting-types") &&
+      method === "POST"
+    ) {
       return Promise.resolve(
         jsonResponse({ message: "Название не может быть пустым" }, 400),
       );
     }
-    return Promise.resolve(jsonResponse([]));
+    return Promise.resolve(jsonResponse({ items: [] }));
   });
   vi.stubGlobal("fetch", fetchMock);
 
@@ -92,6 +97,7 @@ it("shows the server validation message and keeps the list unchanged", async () 
 
   expect(await screen.findByText("Пока нет типов встреч")).toBeInTheDocument();
 
+  fireEvent.change(screen.getByLabelText(/ID/), { target: { value: "intro" } });
   fireEvent.change(screen.getByLabelText(/Название/), {
     target: { value: "   " },
   });
