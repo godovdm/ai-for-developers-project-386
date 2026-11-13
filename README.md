@@ -95,6 +95,21 @@ mise exec -- sh scripts/check-generated.sh
 
 ## Разработка и запуск
 
+### Запуск в Docker
+
+Соберите образ и запустите контейнер из корня проекта:
+
+```sh
+docker build -t meeting-calendar .
+docker run --rm -p 8080:8080 meeting-calendar
+```
+
+Приложение доступно на `http://localhost:8080`, проверка сервера — на
+`http://localhost:8080/api/health`. Данные хранятся в памяти и пропадают при
+остановке контейнера. Остановить сервер можно с помощью `Ctrl+C`.
+
+### Локальная разработка
+
 Понадобятся [mise](https://mise.jdx.dev/getting-started) и Java для генератора
 OpenAPI. Установите инструменты и зависимости, затем соберите клиент:
 
