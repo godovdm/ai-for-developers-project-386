@@ -145,3 +145,25 @@ JAVA_HOME="$(/usr/libexec/java_home)" \
 Учебный проект [Хекслета](https://ru.hexlet.io/programs/ai-for-developers). [Исходное описание задания](https://files.hexlet.app/a/2ipc5m).
 
 Автоматическая проверка Хекслета запускается через [workflow](.github/workflows/hexlet-check.yml). Его файл и имя репозитория сохраняются без изменений.
+
+## Выпуск версии
+
+Release Please запускается после изменений в `main` и вручную через Actions →
+`release-please` → Run workflow. Для работы добавьте в секреты Actions
+репозитория `RELEASE_PLEASE_TOKEN`: fine-grained personal access token с доступом
+к этому репозиторию и правами Contents, Issues и Pull requests на чтение и запись.
+В Settings → Actions → General разрешите GitHub Actions создавать pull request.
+Токен владельца нужен, чтобы для release PR запускались проверки GitHub Actions,
+включая проверку Хекслета; встроенный `GITHUB_TOKEN` их не запускает.
+
+1. Вливайте изменения в `main` с сообщениями Conventional Commits: `feat:`,
+   `fix:` и при необходимости `!` или `BREAKING CHANGE:` для несовместимых изменений.
+2. Workflow создаст или обновит release PR с версией, `CHANGELOG.md` и изменениями
+   `package.json`. Начальная версия в `.release-please-manifest.json` — `0.1.0`.
+3. Проверьте содержимое release PR и успешное выполнение проверок, включая
+   `mise --locked run check`, затем влейте PR в `main`.
+4. Следующий запуск workflow создаст Git-тег и GitHub Release с описанием изменений.
+   Публикация в npm и развёртывание приложения этим workflow не выполняются.
+
+Подробнее о настройке и ограничениях токена — в
+[документации release-please-action](https://github.com/googleapis/release-please-action#github-credentials).
