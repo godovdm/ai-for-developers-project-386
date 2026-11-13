@@ -1,5 +1,15 @@
 emit:
   - '@typespec/openapi3'
+warn-as-error: true
+linter:
+  enable:
+    '@azure-tools/typespec-azure-core/casing-style':
+      model: PascalCase
+      modelProperty: false
+      operation: false
+      operationTemplate: false
+      interface: false
+      namespace: false
 options:
   '@typespec/openapi3':
     emitter-output-dir: '{output-dir}'

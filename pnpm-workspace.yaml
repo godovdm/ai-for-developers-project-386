@@ -1,0 +1,5 @@
+packageExtensions:
+  # Azure Core imports versioning but does not declare it in package metadata.
+  '@azure-tools/typespec-azure-core@0.73.0':
+    dependencies:
+      '@typespec/versioning': 0.87.0
