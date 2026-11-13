@@ -89,6 +89,23 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CreateBookingRequest'
+    get:
+      operationId: listUpcomingBookings
+      summary: List upcoming bookings
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpcomingBookingList'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorV1'
   /api/v1/meeting-types:
     get:
       operationId: listMeetingTypesV1
@@ -379,6 +396,32 @@ components:
           type: string
         durationMinutes:
           $ref: '#/components/schemas/MeetingDuration'
+    UpcomingBooking:
+      type: object
+      required:
+        - meetingType
+        - start
+        - guestName
+        - guestEmail
+      properties:
+        meetingType:
+          $ref: '#/components/schemas/MeetingTypeV1'
+        start:
+          type: string
+        guestName:
+          type: string
+        guestEmail:
+          type: string
+      description: A booking visible to the calendar owner.
+    UpcomingBookingList:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/UpcomingBooking'
 servers:
   - url: /
     description: Same origin as the application

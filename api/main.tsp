@@ -219,3 +219,25 @@ op createBooking(@body body: CreateBookingRequest):
       @statusCode statusCode: 409;
       @body body: ApiErrorV1;
     };
+
+@doc("A booking visible to the calendar owner.")
+model UpcomingBooking {
+  meetingType: MeetingTypeV1;
+  start: string;
+  guestName: string;
+  guestEmail: string;
+}
+
+model UpcomingBookingList {
+  items: UpcomingBooking[];
+}
+
+@summary("List upcoming bookings")
+@route("/api/v1/bookings")
+@get
+op listUpcomingBookings():
+  | UpcomingBookingList
+  | {
+      @statusCode statusCode: 400;
+      @body body: ApiErrorV1;
+    };

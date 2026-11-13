@@ -13,3 +13,5 @@ export * from './MeetingDuration';
 export * from './MeetingType';
 export * from './MeetingTypeListV1';
 export * from './MeetingTypeV1';
+export * from './UpcomingBooking';
+export * from './UpcomingBookingList';

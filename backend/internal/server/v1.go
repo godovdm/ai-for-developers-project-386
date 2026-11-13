@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/mail"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 	_ "time/tzdata" // Embed IANA time zone data for deployments without system zoneinfo.
@@ -184,4 +185,29 @@ func (s server) CreateBooking(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusCreated, generated.BookingConfirmation{MeetingType: toV1(item), Start: start.Format(time.RFC3339)})
+}
+
+func (s server) ListUpcomingBookings(w http.ResponseWriter, _ *http.Request) {
+	location, err := time.LoadLocation("Europe/Moscow")
+	if err != nil {
+		writeV1Error(w, http.StatusInternalServerError, "timezone_error", "Не удалось определить часовой пояс")
+		return
+	}
+	bookings := s.v1.Bookings()
+	slices.SortFunc(bookings, func(a, b meeting.Booking) int { return a.Start.Compare(b.Start) })
+	items := make([]generated.UpcomingBooking, 0)
+	now := s.now()
+	types := s.v1.List()
+	for _, booking := range bookings {
+		if !booking.End.After(now) {
+			continue
+		}
+		for _, item := range types {
+			if item.ID == booking.MeetingTypeID {
+				items = append(items, generated.UpcomingBooking{MeetingType: toV1(item), Start: booking.Start.In(location).Format(time.RFC3339), GuestName: booking.GuestName, GuestEmail: booking.GuestEmail})
+				break
+			}
+		}
+	}
+	writeJSON(w, http.StatusOK, generated.UpcomingBookingList{Items: items})
 }

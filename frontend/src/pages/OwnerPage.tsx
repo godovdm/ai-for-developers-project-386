@@ -15,8 +15,9 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
-import { useState, type SyntheticEvent } from "react";
+import { useEffect, useState, type SyntheticEvent } from "react";
 import { api, readErrorMessage } from "../api/client";
+import type { UpcomingBooking } from "../api/generated/models/UpcomingBooking";
 import { MeetingDuration } from "../api/generated/models/MeetingDuration";
 import { useMeetingTypes } from "../hooks/useMeetingTypes";
 
@@ -42,6 +43,22 @@ function parseDuration(value: string): MeetingDuration {
 
 export function OwnerPage() {
   const { state, reload } = useMeetingTypes();
+  const [bookings, setBookings] = useState<UpcomingBooking[] | null>(null);
+  const [bookingError, setBookingError] = useState(false);
+  useEffect(() => {
+    let active = true;
+    void api.listUpcomingBookings().then(
+      (result) => {
+        if (active) setBookings(result.items);
+      },
+      () => {
+        if (active) setBookingError(true);
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, []);
   const [id, setId] = useState("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -138,6 +155,36 @@ export function OwnerPage() {
           </form>
         </Paper>
 
+        <Box component="section" aria-label="Предстоящие записи">
+          <Title order={2} mb="md">
+            Предстоящие записи
+          </Title>
+          {bookingError && (
+            <Alert color="red">Не удалось загрузить записи</Alert>
+          )}
+          {!bookingError && bookings === null && (
+            <Loader aria-label="Загрузка записей" />
+          )}
+          {bookings?.length === 0 && (
+            <Text c="dimmed">Пока нет предстоящих записей</Text>
+          )}
+          {bookings?.map((booking) => (
+            <Paper
+              key={booking.start + booking.guestEmail}
+              withBorder
+              p="md"
+              mb="sm"
+            >
+              <Text fw={600}>{booking.meetingType.name}</Text>
+              <Text>
+                {booking.start.slice(0, 10)} {booking.start.slice(11, 16)}{" "}
+                (Москва)
+              </Text>
+              <Text>{booking.guestName}</Text>
+              <Text>{booking.guestEmail}</Text>
+            </Paper>
+          ))}
+        </Box>
         <Box>
           <Title order={2} mb="md">
             Созданные типы встреч

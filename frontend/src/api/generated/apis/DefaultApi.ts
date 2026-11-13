@@ -26,6 +26,7 @@ import type {
   MeetingType,
   MeetingTypeListV1,
   MeetingTypeV1,
+  UpcomingBookingList,
 } from '../models/index';
 import {
     ApiErrorFromJSON,
@@ -50,6 +51,8 @@ import {
     MeetingTypeListV1ToJSON,
     MeetingTypeV1FromJSON,
     MeetingTypeV1ToJSON,
+    UpcomingBookingListFromJSON,
+    UpcomingBookingListToJSON,
 } from '../models/index';
 
 export interface CreateBookingOperationRequest {
@@ -362,6 +365,35 @@ export class DefaultApi extends runtime.BaseAPI {
      */
     async listMeetingTypesV1(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<MeetingTypeListV1> {
         const response = await this.listMeetingTypesV1Raw(initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * List upcoming bookings
+     */
+    async listUpcomingBookingsRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<UpcomingBookingList>> {
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+
+        let urlPath = `/api/v1/bookings`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => UpcomingBookingListFromJSON(jsonValue));
+    }
+
+    /**
+     * List upcoming bookings
+     */
+    async listUpcomingBookings(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<UpcomingBookingList> {
+        const response = await this.listUpcomingBookingsRaw(initOverrides);
         return await response.value();
     }
 

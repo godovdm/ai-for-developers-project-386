@@ -102,3 +102,10 @@ func (m *Memory) Available(start, end time.Time) bool {
 	}
 	return true
 }
+
+// Bookings returns a snapshot of all reserved intervals.
+func (m *Memory) Bookings() []Booking {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return append([]Booking(nil), m.bookings...)
+}
