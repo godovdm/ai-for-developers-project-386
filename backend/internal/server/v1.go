@@ -92,6 +92,19 @@ func toV1(item meeting.Type) generated.MeetingTypeV1 {
 	return generated.MeetingTypeV1{Id: item.ID, Name: item.Name, Description: item.Description, DurationMinutes: generated.MeetingDuration(item.Duration)}
 }
 
+const (
+	scheduleStart = 10 * 60
+	scheduleEnd   = 18 * 60
+	scheduleStep  = 30
+)
+
+func validScheduleStart(start time.Time, duration meeting.Duration) bool {
+	minute := start.Hour()*60 + start.Minute()
+	return start.Weekday() != time.Saturday && start.Weekday() != time.Sunday &&
+		minute >= scheduleStart && minute+int(duration) <= scheduleEnd &&
+		minute%scheduleStep == 0 && start.Second() == 0 && start.Nanosecond() == 0
+}
+
 func (s server) GetAvailability(w http.ResponseWriter, _ *http.Request, id string, params generated.GetAvailabilityParams) {
 	var duration meeting.Duration
 	for _, item := range s.v1.List() {
@@ -119,12 +132,10 @@ func (s server) GetAvailability(w http.ResponseWriter, _ *http.Request, id strin
 			continue
 		}
 		slots := make([]string, 0)
-		if date.Weekday() != time.Saturday && date.Weekday() != time.Sunday {
-			for minute := 10 * 60; minute+int(duration) <= 18*60; minute += 30 {
-				start := date.Add(time.Duration(minute) * time.Minute)
-				if s.v1.Available(start, start.Add(time.Duration(duration)*time.Minute)) {
-					slots = append(slots, start.Format(time.RFC3339))
-				}
+		for minute := scheduleStart; minute < scheduleEnd; minute += scheduleStep {
+			start := date.Add(time.Duration(minute) * time.Minute)
+			if validScheduleStart(start, duration) && s.v1.Available(start, start.Add(time.Duration(duration)*time.Minute)) {
+				slots = append(slots, start.Format(time.RFC3339))
 			}
 		}
 		days = append(days, generated.AvailabilityDay{Date: date.Format(time.DateOnly), Slots: slots})
@@ -175,8 +186,7 @@ func (s server) CreateBooking(w http.ResponseWriter, r *http.Request) {
 	start = start.In(location)
 	now := s.now().In(location)
 	first := time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, location)
-	minute := start.Hour()*60 + start.Minute()
-	if start.Before(first) || !start.Before(first.AddDate(0, 0, 14)) || start.Weekday() == time.Saturday || start.Weekday() == time.Sunday || minute < 600 || minute+int(item.Duration) > 1080 || minute%30 != 0 || start.Second() != 0 || start.Nanosecond() != 0 {
+	if start.Before(first) || !start.Before(first.AddDate(0, 0, 14)) || !validScheduleStart(start, item.Duration) {
 		writeV1Error(w, http.StatusBadRequest, "validation_error", "Недопустимое время записи")
 		return
 	}
