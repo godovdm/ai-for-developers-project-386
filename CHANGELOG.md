@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.3.0](https://github.com/godovdm/ai-for-developers-project-386/compare/meeting-calendar-v0.2.0...meeting-calendar-v0.3.0) (2026-11-13)
+
+
+### Features
+
+* add Docker support ([751252d](https://github.com/godovdm/ai-for-developers-project-386/commit/751252d81086f0b8cecb7411f3e6e87040c61884))
+* добавить запуск через Docker ([1c16130](https://github.com/godovdm/ai-for-developers-project-386/commit/1c16130c85d956db81398dfe2b7416adfba66e24))
+
+
+### Bug Fixes
+
+* detect system clock changes in guest calendar ([8611f60](https://github.com/godovdm/ai-for-developers-project-386/commit/8611f60384f64bcb6d680ee25532a1953ae7989f))
+* **docker:** учитывать настройки pnpm workspace ([b009946](https://github.com/godovdm/ai-for-developers-project-386/commit/b0099465cca871dcc92663324b705bd04542d4d6))
+* refresh guest calendar at Moscow midnight ([5a44639](https://github.com/godovdm/ai-for-developers-project-386/commit/5a446392ee5532f432c3bdb21a9cfd15da53fcd0))
+* обновлять окно записи при смене дня ([b8c586f](https://github.com/godovdm/ai-for-developers-project-386/commit/b8c586f3fc0bff56be29dfab55293b0a88ef4716))
+* сбрасывать ошибку после загрузки слотов ([7fc735e](https://github.com/godovdm/ai-for-developers-project-386/commit/7fc735e312ac6b40941ced62bcb4d3919a198835))
+
 ## [0.2.0](https://github.com/godovdm/ai-for-developers-project-386/compare/meeting-calendar-v0.1.0...meeting-calendar-v0.2.0) (2026-11-13)
 
 ### Features
