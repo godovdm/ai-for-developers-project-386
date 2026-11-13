@@ -7,6 +7,9 @@ import {
   Text,
   Title,
 } from "@mantine/core";
+import { useEffect, useState } from "react";
+import { api } from "../api/client";
+import type { Availability } from "../api/generated";
 import { useMeetingTypes } from "../hooks/useMeetingTypes";
 import { AppLink } from "../router";
 
@@ -15,7 +18,45 @@ interface MeetingTypePageProps {
 }
 
 export function MeetingTypePage({ id }: MeetingTypePageProps) {
+  const [day, setDay] = useState(() =>
+    new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Moscow" }),
+  );
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setDay(
+        new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Moscow" }),
+      );
+    }, 30_000);
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, []);
+  return <MeetingTypeContent key={`${id}:${day}`} id={id} />;
+}
+
+function MeetingTypeContent({ id }: MeetingTypePageProps) {
   const { state, reload } = useMeetingTypes();
+  const [availability, setAvailability] = useState<Availability>();
+  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedSlot, setSelectedSlot] = useState("");
+  const [availabilityError, setAvailabilityError] = useState(false);
+  useEffect(() => {
+    let active = true;
+    api
+      .getAvailability({ id })
+      .then((result) => {
+        if (active) {
+          setAvailability(result);
+          setSelectedDate(result.days[0]?.date ?? "");
+        }
+      })
+      .catch(() => {
+        if (active) setAvailabilityError(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, [id]);
   const meetingType =
     state.status === "ready"
       ? state.meetingTypes.find((item) => item.id === id)
@@ -43,9 +84,52 @@ export function MeetingTypePage({ id }: MeetingTypePageProps) {
             <Title order={1}>{meetingType.name}</Title>
             <Text c="dimmed">{meetingType.description}</Text>
             <Text>Длительность: {meetingType.durationMinutes} минут</Text>
-            <Alert title="Следующий шаг">
-              Выбор даты и времени появится на следующем шаге.
-            </Alert>
+            {availabilityError && (
+              <Alert color="red">Не удалось загрузить доступное время</Alert>
+            )}
+            {availability && (
+              <>
+                <Text>Выберите дату (время Москвы)</Text>
+                <div>
+                  {availability.days.map((day) => (
+                    <Button
+                      key={day.date}
+                      variant={selectedDate === day.date ? "filled" : "light"}
+                      onClick={() => {
+                        setSelectedDate(day.date);
+                        setSelectedSlot("");
+                      }}
+                    >
+                      {day.date}
+                    </Button>
+                  ))}
+                </div>
+                <Text>Выберите время</Text>
+                <div>
+                  {availability.days
+                    .find((day) => day.date === selectedDate)
+                    ?.slots.map((slot) => (
+                      <Button
+                        key={slot}
+                        variant={selectedSlot === slot ? "filled" : "light"}
+                        onClick={() => {
+                          setSelectedSlot(slot);
+                        }}
+                      >
+                        {slot.slice(11, 16)}
+                      </Button>
+                    ))}
+                </div>
+                {availability.days.find((day) => day.date === selectedDate)
+                  ?.slots.length === 0 && <Text>Свободных слотов нет</Text>}
+                {selectedSlot && (
+                  <Text>
+                    Выбрано: {selectedSlot.slice(0, 10)}{" "}
+                    {selectedSlot.slice(11, 16)} (Москва)
+                  </Text>
+                )}
+              </>
+            )}
           </Stack>
         )}
       </Stack>

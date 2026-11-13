@@ -3,6 +3,8 @@ apis/index.ts
 index.ts
 models/ApiError.ts
 models/ApiErrorV1.ts
+models/Availability.ts
+models/AvailabilityDay.ts
 models/CreateMeetingTypeRequest.ts
 models/CreateMeetingTypeV1Request.ts
 models/HealthStatus.ts

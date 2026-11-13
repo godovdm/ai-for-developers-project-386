@@ -37,6 +37,17 @@ type ApiErrorV1 struct {
 	Message string `json:"message"`
 }
 
+// Availability The current 14-day booking window.
+type Availability struct {
+	Days []AvailabilityDay `json:"days"`
+}
+
+// AvailabilityDay Available starts for one calendar day in the owner's time zone.
+type AvailabilityDay struct {
+	Date  string   `json:"date"`
+	Slots []string `json:"slots"`
+}
+
 // CreateMeetingTypeRequest Data required to create a meeting type.
 type CreateMeetingTypeRequest struct {
 	// Description Meeting type description.
@@ -101,6 +112,12 @@ type MeetingTypeV1 struct {
 	Name            string          `json:"name"`
 }
 
+// GetAvailabilityParams defines parameters for GetAvailability.
+type GetAvailabilityParams struct {
+	From *string `form:"from,omitempty" json:"from,omitempty"`
+	To   *string `form:"to,omitempty" json:"to,omitempty"`
+}
+
 // CreateMeetingTypeJSONRequestBody defines body for CreateMeetingType for application/json ContentType.
 type CreateMeetingTypeJSONRequestBody = CreateMeetingTypeRequest
 
@@ -127,6 +144,9 @@ type ServerInterface interface {
 	// Get a meeting type using API v1
 	// (GET /api/v1/meeting-types/{id})
 	GetMeetingTypeV1(w http.ResponseWriter, r *http.Request, id string)
+	// List available starts for a meeting type
+	// (GET /api/v1/meeting-types/{id}/availability)
+	GetAvailability(w http.ResponseWriter, r *http.Request, id string, params GetAvailabilityParams)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -224,6 +244,50 @@ func (siw *ServerInterfaceWrapper) GetMeetingTypeV1(w http.ResponseWriter, r *ht
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetMeetingTypeV1(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetAvailability operation middleware
+func (siw *ServerInterfaceWrapper) GetAvailability(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetAvailabilityParams
+
+	// ------------- Optional query parameter "from" -------------
+
+	err = runtime.BindQueryParameter("form", false, false, "from", r.URL.Query(), &params.From)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "from", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "to" -------------
+
+	err = runtime.BindQueryParameter("form", false, false, "to", r.URL.Query(), &params.To)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "to", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAvailability(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -359,6 +423,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/meeting-types", wrapper.ListMeetingTypesV1)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/meeting-types", wrapper.CreateMeetingTypeV1)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/meeting-types/{id}", wrapper.GetMeetingTypeV1)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/meeting-types/{id}/availability", wrapper.GetAvailability)
 
 	return m
 }

@@ -17,6 +17,7 @@ import * as runtime from '../runtime';
 import type {
   ApiError,
   ApiErrorV1,
+  Availability,
   CreateMeetingTypeRequest,
   CreateMeetingTypeV1Request,
   HealthStatus,
@@ -29,6 +30,8 @@ import {
     ApiErrorToJSON,
     ApiErrorV1FromJSON,
     ApiErrorV1ToJSON,
+    AvailabilityFromJSON,
+    AvailabilityToJSON,
     CreateMeetingTypeRequestFromJSON,
     CreateMeetingTypeRequestToJSON,
     CreateMeetingTypeV1RequestFromJSON,
@@ -49,6 +52,12 @@ export interface CreateMeetingTypeOperationRequest {
 
 export interface CreateMeetingTypeV1OperationRequest {
     createMeetingTypeV1Request: CreateMeetingTypeV1Request;
+}
+
+export interface GetAvailabilityRequest {
+    id: string;
+    from?: string;
+    to?: string;
 }
 
 export interface GetMeetingTypeV1Request {
@@ -135,6 +144,51 @@ export class DefaultApi extends runtime.BaseAPI {
      */
     async createMeetingTypeV1(requestParameters: CreateMeetingTypeV1OperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<MeetingTypeV1> {
         const response = await this.createMeetingTypeV1Raw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * List available starts for a meeting type
+     */
+    async getAvailabilityRaw(requestParameters: GetAvailabilityRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Availability>> {
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling getAvailability().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        if (requestParameters['from'] != null) {
+            queryParameters['from'] = requestParameters['from'];
+        }
+
+        if (requestParameters['to'] != null) {
+            queryParameters['to'] = requestParameters['to'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+
+        let urlPath = `/api/v1/meeting-types/{id}/availability`;
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => AvailabilityFromJSON(jsonValue));
+    }
+
+    /**
+     * List available starts for a meeting type
+     */
+    async getAvailability(requestParameters: GetAvailabilityRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Availability> {
+        const response = await this.getAvailabilityRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

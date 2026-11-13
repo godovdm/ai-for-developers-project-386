@@ -9,6 +9,7 @@ import (
 	"log"
 	"math/big"
 	"net/http"
+	"time"
 
 	"github.com/godovdm/ai-for-developers-project-386/backend/internal/api/generated"
 	"github.com/godovdm/ai-for-developers-project-386/backend/internal/meeting"
@@ -25,12 +26,18 @@ type createMeetingTypeRequest struct {
 type server struct {
 	meetingTypes meeting.Repository
 	v1           *meeting.Memory
+	now          func() time.Time
 }
 
 // New returns the calendar API handler.
 func New() http.Handler {
+	return NewWithClock(time.Now)
+}
+
+// NewWithClock returns the calendar handler using the supplied clock.
+func NewWithClock(now func() time.Time) http.Handler {
 	store := meeting.NewMemory()
-	return generated.Handler(server{meetingTypes: store, v1: store})
+	return generated.Handler(server{meetingTypes: store, v1: store, now: now})
 }
 
 func (server) GetHealth(w http.ResponseWriter, _ *http.Request) {

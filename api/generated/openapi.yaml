@@ -123,6 +123,41 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorV1'
+  /api/v1/meeting-types/{id}/availability:
+    get:
+      operationId: getAvailability
+      summary: List available starts for a meeting type
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+          explode: false
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+          explode: false
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Availability'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorV1'
 security:
   - {}
 components:
@@ -146,6 +181,29 @@ components:
           type: string
         message:
           type: string
+    Availability:
+      type: object
+      required:
+        - days
+      properties:
+        days:
+          type: array
+          items:
+            $ref: '#/components/schemas/AvailabilityDay'
+      description: The current 14-day booking window.
+    AvailabilityDay:
+      type: object
+      required:
+        - date
+        - slots
+      properties:
+        date:
+          type: string
+        slots:
+          type: array
+          items:
+            type: string
+      description: Available starts for one calendar day in the owner's time zone.
     CreateMeetingTypeRequest:
       type: object
       required:

@@ -163,3 +163,24 @@ op getMeetingTypeV1(@path id: string):
       @statusCode statusCode: 404;
       @body body: ApiErrorV1;
     };
+
+@doc("Available starts for one calendar day in the owner's time zone.")
+model AvailabilityDay {
+  date: string;
+  slots: string[];
+}
+
+@doc("The current 14-day booking window.")
+model Availability {
+  days: AvailabilityDay[];
+}
+
+@summary("List available starts for a meeting type")
+@route("/api/v1/meeting-types/{id}/availability")
+@get
+op getAvailability(@path id: string, @query from?: string, @query to?: string):
+  | Availability
+  | {
+      @statusCode statusCode: 404;
+      @body body: ApiErrorV1;
+    };

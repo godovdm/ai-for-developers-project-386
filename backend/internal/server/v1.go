@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
+	_ "time/tzdata" // Embed IANA time zone data for deployments without system zoneinfo.
 	"unicode/utf8"
 
 	"github.com/godovdm/ai-for-developers-project-386/backend/internal/api/generated"
@@ -86,4 +88,42 @@ func writeV1Error(w http.ResponseWriter, status int, code, message string) {
 
 func toV1(item meeting.Type) generated.MeetingTypeV1 {
 	return generated.MeetingTypeV1{Id: item.ID, Name: item.Name, Description: item.Description, DurationMinutes: generated.MeetingDuration(item.Duration)}
+}
+
+func (s server) GetAvailability(w http.ResponseWriter, _ *http.Request, id string, params generated.GetAvailabilityParams) {
+	var duration meeting.Duration
+	for _, item := range s.v1.List() {
+		if item.ID == id {
+			duration = item.Duration
+			break
+		}
+	}
+	if duration == 0 {
+		writeV1Error(w, http.StatusNotFound, "meeting_type_not_found", "Тип встречи не найден")
+		return
+	}
+	location, err := time.LoadLocation("Europe/Moscow")
+	if err != nil {
+		writeV1Error(w, http.StatusInternalServerError, "timezone_error", "Не удалось определить часовой пояс")
+		return
+	}
+	now := s.now().In(location)
+	first := time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, location)
+	days := make([]generated.AvailabilityDay, 0, 14)
+	for i := range 14 {
+		date := first.AddDate(0, 0, i)
+		dateString := date.Format(time.DateOnly)
+		if (params.From != nil && dateString < *params.From) || (params.To != nil && dateString > *params.To) {
+			continue
+		}
+		slots := make([]string, 0)
+		if date.Weekday() != time.Saturday && date.Weekday() != time.Sunday {
+			for minute := 10 * 60; minute+int(duration) <= 18*60; minute += 30 {
+				start := date.Add(time.Duration(minute) * time.Minute)
+				slots = append(slots, start.Format(time.RFC3339))
+			}
+		}
+		days = append(days, generated.AvailabilityDay{Date: date.Format(time.DateOnly), Slots: slots})
+	}
+	writeJSON(w, http.StatusOK, generated.Availability{Days: days})
 }
