@@ -16,8 +16,318 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HealthStatus'
+  /api/meeting-types:
+    get:
+      operationId: listMeetingTypes
+      summary: List meeting types
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MeetingType'
+    post:
+      operationId: createMeetingType
+      summary: Create a meeting type
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeetingType'
+        '400':
+          description: API error with a human-readable message.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMeetingTypeRequest'
+  /api/v1/bookings:
+    post:
+      operationId: createBooking
+      summary: Book an available meeting
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingConfirmation'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorV1'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorV1'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorV1'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBookingRequest'
+    get:
+      operationId: listUpcomingBookings
+      summary: List upcoming bookings
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpcomingBookingList'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorV1'
+  /api/v1/meeting-types:
+    get:
+      operationId: listMeetingTypesV1
+      summary: List meeting types using API v1
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeetingTypeListV1'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorV1'
+    post:
+      operationId: createMeetingTypeV1
+      summary: Create a meeting type using API v1
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeetingTypeV1'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorV1'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorV1'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMeetingTypeV1Request'
+  /api/v1/meeting-types/{id}:
+    get:
+      operationId: getMeetingTypeV1
+      summary: Get a meeting type using API v1
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeetingTypeV1'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorV1'
+  /api/v1/meeting-types/{id}/availability:
+    get:
+      operationId: getAvailability
+      summary: List available starts for a meeting type
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+          explode: false
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+          explode: false
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Availability'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorV1'
+security:
+  - {}
 components:
   schemas:
+    ApiError:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          description: Human-readable error message.
+      description: API error with a human-readable message.
+    ApiErrorV1:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+    Availability:
+      type: object
+      required:
+        - days
+      properties:
+        days:
+          type: array
+          items:
+            $ref: '#/components/schemas/AvailabilityDay'
+      description: The current 14-day booking window.
+    AvailabilityDay:
+      type: object
+      required:
+        - date
+        - slots
+      properties:
+        date:
+          type: string
+        slots:
+          type: array
+          items:
+            type: string
+      description: Available starts for one calendar day in the owner's time zone.
+    BookingConfirmation:
+      type: object
+      required:
+        - meetingType
+        - start
+      properties:
+        meetingType:
+          $ref: '#/components/schemas/MeetingTypeV1'
+        start:
+          type: string
+      description: Confirmed booking details.
+    CreateBookingRequest:
+      type: object
+      required:
+        - meetingTypeId
+        - start
+        - guestName
+        - guestEmail
+      properties:
+        meetingTypeId:
+          type: string
+        start:
+          type: string
+        guestName:
+          type: string
+        guestEmail:
+          type: string
+      description: A guest's request to book an available start.
+    CreateMeetingTypeRequest:
+      type: object
+      required:
+        - name
+        - description
+        - durationMinutes
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          description: Meeting type name.
+        description:
+          type: string
+          maxLength: 1000
+          description: Meeting type description.
+        durationMinutes:
+          allOf:
+            - $ref: '#/components/schemas/MeetingDuration'
+          description: Meeting duration in minutes.
+      description: Data required to create a meeting type.
+    CreateMeetingTypeV1Request:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - durationMinutes
+      properties:
+        id:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: ^[a-z0-9]([a-z0-9-]{0,62}[a-z0-9])?$
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 2000
+        durationMinutes:
+          $ref: '#/components/schemas/MeetingDuration'
+      description: Meeting type creation using an owner-supplied identifier.
     HealthStatus:
       type: object
       required:
@@ -29,6 +339,89 @@ components:
             - ok
           description: The server is responding.
       description: Health status of the server.
+    MeetingDuration:
+      type: number
+      enum:
+        - 30
+        - 60
+        - 90
+        - 120
+      description: Allowed meeting duration in minutes.
+    MeetingType:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - durationMinutes
+      properties:
+        id:
+          type: string
+          description: Unique meeting type identifier.
+        name:
+          type: string
+          maxLength: 100
+          description: Meeting type name.
+        description:
+          type: string
+          maxLength: 1000
+          description: Meeting type description.
+        durationMinutes:
+          allOf:
+            - $ref: '#/components/schemas/MeetingDuration'
+          description: Meeting duration in minutes.
+      description: A meeting type offered by the calendar owner.
+    MeetingTypeListV1:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MeetingTypeV1'
+    MeetingTypeV1:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - durationMinutes
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        durationMinutes:
+          $ref: '#/components/schemas/MeetingDuration'
+    UpcomingBooking:
+      type: object
+      required:
+        - meetingType
+        - start
+        - guestName
+        - guestEmail
+      properties:
+        meetingType:
+          $ref: '#/components/schemas/MeetingTypeV1'
+        start:
+          type: string
+        guestName:
+          type: string
+        guestEmail:
+          type: string
+      description: A booking visible to the calendar owner.
+    UpcomingBookingList:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/UpcomingBooking'
 servers:
   - url: /
     description: Same origin as the application

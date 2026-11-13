@@ -4,7 +4,7 @@
 
 Небольшой сервис для записи на звонок к одному заранее заданному владельцу календаря. Владелец предлагает типы встреч, а гость без регистрации выбирает свободное время и бронирует его.
 
-**Состояние проекта:** создан каркас приложения. Сервер и клиент проверяют связь через служебный API; сценарии календаря пока не реализованы.
+**Состояние проекта:** владелец создаёт типы встреч и видит предстоящие записи, а гость выбирает свободное время и записывается.
 
 ## Сценарии
 
@@ -12,7 +12,32 @@
 - Гость выбирает тип встречи, день и свободное время, вводит имя и email, затем получает подтверждение записи на экране.
 - Редактирование и удаление типов встреч, отмена и перенос записей, отправка писем и создание ссылок на видеозвонок не входят в первую версию.
 
-Авторизации нет. Страница владельца и её API будут доступны любому посетителю, включая список записей с именами и email гостей. Поэтому публичное развёртывание этой версии подходит только для демонстрации с тестовыми данными.
+Авторизации нет. Страница владельца и её API доступны любому посетителю, включая список записей с именами и email гостей. Эти данные публичны, поэтому для демонстрации используйте только тестовые данные.
+
+## Страницы
+
+- `/` — главная для гостя: вводный блок, возможности и список доступных типов встреч с переходом к выбору времени.
+- `/owner` — страница владельца: форма создания типа встречи, список созданных типов и предстоящие записи.
+- `/meeting-types/:id` — выбранный тип встречи, выбор даты и времени и запись гостя.
+
+Все страницы открыты без авторизации.
+
+## API
+
+- `GET /api/health` — проверка доступности сервера.
+- `GET /api/v1/meeting-types` — список типов встреч в поле `items`.
+- `GET /api/v1/meeting-types/{id}` — тип встречи по идентификатору.
+- `POST /api/v1/meeting-types` — создание типа с вручную введённым `id`, названием, описанием и длительностью 30, 60, 90 или 120 минут. При ошибке валидации возвращается `400`, при повторном `id` — `409`.
+- `GET /api/v1/bookings` — предстоящие записи всех типов с данными гостя в поле `items`.
+
+Проверка API после запуска сервера:
+
+```sh
+curl -i -X POST http://localhost:8080/api/v1/meeting-types -H 'Content-Type: application/json' -d '{"id":"intro","name":"Знакомство","description":"","durationMinutes":30}'
+curl -i http://localhost:8080/api/v1/meeting-types
+```
+
+Типы встреч хранятся в памяти процесса и сбрасываются при перезапуске.
 
 ## Правила записи
 
@@ -51,6 +76,16 @@ GLOSSARY.md                # термины предметной области
 ```
 
 Каталоги в схеме появятся по мере реализации. TypeSpec — источник истины для API; сгенерированные OpenAPI, SDK и Go-код не редактируются вручную. Версии генераторов зафиксированы; для строгой проверки TypeScript к сгенерированному SDK автоматически применяется скрипт совместимости `scripts/patch-sdk.mjs`.
+
+Для генерации и проверки артефактов после изменения TypeSpec:
+
+```sh
+mise exec -- tsp compile api --output-dir api/generated
+(cd backend && mise exec -- go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.5.1 -generate types,std-http-server -package generated ../api/generated/openapi.yaml > internal/api/generated/api.gen.go)
+mise exec -- openapi-generator-cli generate -i api/generated/openapi.yaml -g typescript-fetch -o frontend/src/api/generated --additional-properties=supportsES6=true,typescriptThreePlus=true --global-property apis,models,supportingFiles=runtime.ts:index.ts
+node scripts/patch-sdk.mjs frontend/src/api/generated/runtime.ts
+mise exec -- sh scripts/check-generated.sh
+```
 
 ## Ограничения
 
@@ -92,8 +127,44 @@ mise run check
 проверка уязвимостей Go требуют подключения к сети. Состав проверок описан в
 [документе о проверках](docs/quality-gates.md).
 
+На macOS Firefox может завершаться с ошибкой `Could not find profile folder`,
+если у запущенного из терминала браузера нет доступа к общему каталогу данных
+Firefox. В этом случае запустите проверки с отдельным домашним каталогом для
+системных API macOS. Явный `JAVA_HOME` позволяет генератору API найти Java:
+
+```sh
+mkdir -p /private/tmp/calendar-firefox-home
+JAVA_HOME="$(/usr/libexec/java_home)" \
+  CFFIXED_USER_HOME=/private/tmp/calendar-firefox-home \
+  mise --locked run check
+```
+
+Подробнее об ошибке: [обсуждение в Playwright](https://github.com/microsoft/playwright/issues/42768).
+
 ## Проект
 
 Учебный проект [Хекслета](https://ru.hexlet.io/programs/ai-for-developers). [Исходное описание задания](https://files.hexlet.app/a/2ipc5m).
 
 Автоматическая проверка Хекслета запускается через [workflow](.github/workflows/hexlet-check.yml). Его файл и имя репозитория сохраняются без изменений.
+
+## Выпуск версии
+
+Release Please запускается после изменений в `main` и вручную через Actions →
+`release-please` → Run workflow. Для работы добавьте в секреты Actions
+репозитория `RELEASE_PLEASE_TOKEN`: fine-grained personal access token с доступом
+к этому репозиторию и правами Contents, Issues и Pull requests на чтение и запись.
+В Settings → Actions → General разрешите GitHub Actions создавать pull request.
+Токен владельца нужен, чтобы для release PR запускались проверки GitHub Actions,
+включая проверку Хекслета; встроенный `GITHUB_TOKEN` их не запускает.
+
+1. Вливайте изменения в `main` с сообщениями Conventional Commits: `feat:`,
+   `fix:` и при необходимости `!` или `BREAKING CHANGE:` для несовместимых изменений.
+2. Workflow создаст или обновит release PR с версией, `CHANGELOG.md` и изменениями
+   `package.json`. Начальная версия в `.release-please-manifest.json` — `0.1.0`.
+3. Проверьте содержимое release PR и успешное выполнение проверок, включая
+   `mise --locked run check`, затем влейте PR в `main`.
+4. Следующий запуск workflow создаст Git-тег и GitHub Release с описанием изменений.
+   Публикация в npm и развёртывание приложения этим workflow не выполняются.
+
+Подробнее о настройке и ограничениях токена — в
+[документации release-please-action](https://github.com/googleapis/release-please-action#github-credentials).

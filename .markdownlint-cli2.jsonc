@@ -2,21 +2,22 @@
   "config": {
     "MD013": false
   },
+  "ignores": [
+    "node_modules/**",
+    ".browser-cache/**",
+    ".worktrees/**",
+    "**/dist/**",
+    "test-results/**",
+    "playwright-report/**",
+    "coverage/**"
+  ],
   "overrides": [
     {
-      "filter": [
-        "AGENTS.md"
-      ],
+      "filter": ["AGENTS.md"],
       "config": {
         "MD041": false
       },
       "combine": "merge"
     }
-  ],
-  "ignores": [
-    "node_modules/**",
-    "test-results/**",
-    "playwright-report/**",
-    ".browser-cache/**"
   ]
 }

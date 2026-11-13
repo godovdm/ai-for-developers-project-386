@@ -8,12 +8,81 @@ package generated
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/oapi-codegen/runtime"
 )
 
 // Defines values for HealthStatusStatus.
 const (
 	Ok HealthStatusStatus = "ok"
 )
+
+// Defines values for MeetingDuration.
+const (
+	N120 MeetingDuration = 120
+	N30  MeetingDuration = 30
+	N60  MeetingDuration = 60
+	N90  MeetingDuration = 90
+)
+
+// ApiError API error with a human-readable message.
+type ApiError struct {
+	// Message Human-readable error message.
+	Message string `json:"message"`
+}
+
+// ApiErrorV1 defines model for ApiErrorV1.
+type ApiErrorV1 struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+// Availability The current 14-day booking window.
+type Availability struct {
+	Days []AvailabilityDay `json:"days"`
+}
+
+// AvailabilityDay Available starts for one calendar day in the owner's time zone.
+type AvailabilityDay struct {
+	Date  string   `json:"date"`
+	Slots []string `json:"slots"`
+}
+
+// BookingConfirmation Confirmed booking details.
+type BookingConfirmation struct {
+	MeetingType MeetingTypeV1 `json:"meetingType"`
+	Start       string        `json:"start"`
+}
+
+// CreateBookingRequest A guest's request to book an available start.
+type CreateBookingRequest struct {
+	GuestEmail    string `json:"guestEmail"`
+	GuestName     string `json:"guestName"`
+	MeetingTypeId string `json:"meetingTypeId"`
+	Start         string `json:"start"`
+}
+
+// CreateMeetingTypeRequest Data required to create a meeting type.
+type CreateMeetingTypeRequest struct {
+	// Description Meeting type description.
+	Description string `json:"description"`
+
+	// DurationMinutes Meeting duration in minutes.
+	DurationMinutes MeetingDuration `json:"durationMinutes"`
+
+	// Name Meeting type name.
+	Name string `json:"name"`
+}
+
+// CreateMeetingTypeV1Request Meeting type creation using an owner-supplied identifier.
+type CreateMeetingTypeV1Request struct {
+	Description string `json:"description"`
+
+	// DurationMinutes Allowed meeting duration in minutes.
+	DurationMinutes MeetingDuration `json:"durationMinutes"`
+	Id              string          `json:"id"`
+	Name            string          `json:"name"`
+}
 
 // HealthStatus Health status of the server.
 type HealthStatus struct {
@@ -24,11 +93,96 @@ type HealthStatus struct {
 // HealthStatusStatus The server is responding.
 type HealthStatusStatus string
 
+// MeetingDuration Allowed meeting duration in minutes.
+type MeetingDuration float32
+
+// MeetingType A meeting type offered by the calendar owner.
+type MeetingType struct {
+	// Description Meeting type description.
+	Description string `json:"description"`
+
+	// DurationMinutes Meeting duration in minutes.
+	DurationMinutes MeetingDuration `json:"durationMinutes"`
+
+	// Id Unique meeting type identifier.
+	Id string `json:"id"`
+
+	// Name Meeting type name.
+	Name string `json:"name"`
+}
+
+// MeetingTypeListV1 defines model for MeetingTypeListV1.
+type MeetingTypeListV1 struct {
+	Items []MeetingTypeV1 `json:"items"`
+}
+
+// MeetingTypeV1 defines model for MeetingTypeV1.
+type MeetingTypeV1 struct {
+	Description string `json:"description"`
+
+	// DurationMinutes Allowed meeting duration in minutes.
+	DurationMinutes MeetingDuration `json:"durationMinutes"`
+	Id              string          `json:"id"`
+	Name            string          `json:"name"`
+}
+
+// UpcomingBooking A booking visible to the calendar owner.
+type UpcomingBooking struct {
+	GuestEmail  string        `json:"guestEmail"`
+	GuestName   string        `json:"guestName"`
+	MeetingType MeetingTypeV1 `json:"meetingType"`
+	Start       string        `json:"start"`
+}
+
+// UpcomingBookingList defines model for UpcomingBookingList.
+type UpcomingBookingList struct {
+	Items []UpcomingBooking `json:"items"`
+}
+
+// GetAvailabilityParams defines parameters for GetAvailability.
+type GetAvailabilityParams struct {
+	From *string `form:"from,omitempty" json:"from,omitempty"`
+	To   *string `form:"to,omitempty" json:"to,omitempty"`
+}
+
+// CreateMeetingTypeJSONRequestBody defines body for CreateMeetingType for application/json ContentType.
+type CreateMeetingTypeJSONRequestBody = CreateMeetingTypeRequest
+
+// CreateBookingJSONRequestBody defines body for CreateBooking for application/json ContentType.
+type CreateBookingJSONRequestBody = CreateBookingRequest
+
+// CreateMeetingTypeV1JSONRequestBody defines body for CreateMeetingTypeV1 for application/json ContentType.
+type CreateMeetingTypeV1JSONRequestBody = CreateMeetingTypeV1Request
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Check that the server is running
 	// (GET /api/health)
 	GetHealth(w http.ResponseWriter, r *http.Request)
+	// List meeting types
+	// (GET /api/meeting-types)
+	ListMeetingTypes(w http.ResponseWriter, r *http.Request)
+	// Create a meeting type
+	// (POST /api/meeting-types)
+	CreateMeetingType(w http.ResponseWriter, r *http.Request)
+	// List upcoming bookings
+	// (GET /api/v1/bookings)
+	ListUpcomingBookings(w http.ResponseWriter, r *http.Request)
+	// Book an available meeting
+	// (POST /api/v1/bookings)
+	CreateBooking(w http.ResponseWriter, r *http.Request)
+	// List meeting types using API v1
+	// (GET /api/v1/meeting-types)
+	ListMeetingTypesV1(w http.ResponseWriter, r *http.Request)
+	// Create a meeting type using API v1
+	// (POST /api/v1/meeting-types)
+	CreateMeetingTypeV1(w http.ResponseWriter, r *http.Request)
+	// Get a meeting type using API v1
+	// (GET /api/v1/meeting-types/{id})
+	GetMeetingTypeV1(w http.ResponseWriter, r *http.Request, id string)
+	// List available starts for a meeting type
+	// (GET /api/v1/meeting-types/{id}/availability)
+	GetAvailability(w http.ResponseWriter, r *http.Request, id string, params GetAvailabilityParams)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -45,6 +199,159 @@ func (siw *ServerInterfaceWrapper) GetHealth(w http.ResponseWriter, r *http.Requ
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetHealth(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListMeetingTypes operation middleware
+func (siw *ServerInterfaceWrapper) ListMeetingTypes(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListMeetingTypes(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateMeetingType operation middleware
+func (siw *ServerInterfaceWrapper) CreateMeetingType(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateMeetingType(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListUpcomingBookings operation middleware
+func (siw *ServerInterfaceWrapper) ListUpcomingBookings(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListUpcomingBookings(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateBooking operation middleware
+func (siw *ServerInterfaceWrapper) CreateBooking(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateBooking(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListMeetingTypesV1 operation middleware
+func (siw *ServerInterfaceWrapper) ListMeetingTypesV1(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListMeetingTypesV1(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateMeetingTypeV1 operation middleware
+func (siw *ServerInterfaceWrapper) CreateMeetingTypeV1(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateMeetingTypeV1(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetMeetingTypeV1 operation middleware
+func (siw *ServerInterfaceWrapper) GetMeetingTypeV1(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetMeetingTypeV1(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetAvailability operation middleware
+func (siw *ServerInterfaceWrapper) GetAvailability(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetAvailabilityParams
+
+	// ------------- Optional query parameter "from" -------------
+
+	err = runtime.BindQueryParameter("form", false, false, "from", r.URL.Query(), &params.From)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "from", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "to" -------------
+
+	err = runtime.BindQueryParameter("form", false, false, "to", r.URL.Query(), &params.To)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "to", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAvailability(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -175,6 +482,14 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	}
 
 	m.HandleFunc("GET "+options.BaseURL+"/api/health", wrapper.GetHealth)
+	m.HandleFunc("GET "+options.BaseURL+"/api/meeting-types", wrapper.ListMeetingTypes)
+	m.HandleFunc("POST "+options.BaseURL+"/api/meeting-types", wrapper.CreateMeetingType)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/bookings", wrapper.ListUpcomingBookings)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/bookings", wrapper.CreateBooking)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/meeting-types", wrapper.ListMeetingTypesV1)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/meeting-types", wrapper.CreateMeetingTypeV1)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/meeting-types/{id}", wrapper.GetMeetingTypeV1)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/meeting-types/{id}/availability", wrapper.GetAvailability)
 
 	return m
 }

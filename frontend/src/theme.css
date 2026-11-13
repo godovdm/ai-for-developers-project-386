@@ -1,0 +1,20 @@
+body {
+  background-color: var(--mantine-color-body);
+}
+
+/* The main action is dark in the light theme and light in the dark theme. */
+.app-primary {
+  --button-bg: #1a1b1e;
+  --button-hover: #343a40;
+  --button-color: #ffffff !important;
+  --button-hover-color: #ffffff !important;
+  --button-bd: transparent;
+}
+
+[data-mantine-color-scheme="dark"] .app-primary {
+  --button-bg: #f1f3f5;
+  --button-hover: #dee2e6;
+  --button-color: #1a1b1e !important;
+  --button-hover-color: #1a1b1e !important;
+  --button-bd: transparent;
+}
