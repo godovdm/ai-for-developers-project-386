@@ -46,6 +46,14 @@ function MeetingTypeContent({ id }: MeetingTypePageProps) {
   const [bookingError, setBookingError] = useState("");
   const [confirmed, setConfirmed] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  async function refreshAvailability() {
+    try {
+      setAvailability(await api.getAvailability({ id }));
+      setAvailabilityError(false);
+    } catch {
+      setAvailabilityError(true);
+    }
+  }
   async function book() {
     setSubmitting(true);
     setBookingError("");
@@ -62,20 +70,12 @@ function MeetingTypeContent({ id }: MeetingTypePageProps) {
         `${result.meetingType.name}: ${result.start.slice(0, 10)} ${result.start.slice(11, 16)} (Москва)`,
       );
       setSelectedSlot("");
-      try {
-        setAvailability(await api.getAvailability({ id }));
-      } catch {
-        setAvailabilityError(true);
-      }
+      await refreshAvailability();
     } catch (error) {
       if (error instanceof ResponseError && error.response.status === 409) {
         setBookingError("Это время уже занято. Выберите другое время.");
         setSelectedSlot("");
-        try {
-          setAvailability(await api.getAvailability({ id }));
-        } catch {
-          setAvailabilityError(true);
-        }
+        await refreshAvailability();
       } else {
         setBookingError(
           "Не удалось записаться. Проверьте имя и email и попробуйте снова.",
