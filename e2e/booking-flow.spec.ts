@@ -47,3 +47,81 @@ test("owner sees a booking made by a guest", async ({
     bookings.getByText(`${day.date} ${day.slots[0].slice(11, 16)} (Москва)`),
   ).toBeVisible();
 });
+
+for (const outcome of ["confirmed", "conflict"] as const) {
+  test(`availability error clears after a ${outcome} booking refresh`, async ({
+    page,
+    request,
+  }, testInfo) => {
+    const id = `refresh-${outcome}-${testInfo.project.name}`;
+    const created = await request.post("/api/v1/meeting-types", {
+      data: {
+        id,
+        name: "Обновление времени",
+        description: "",
+        durationMinutes: 60,
+      },
+    });
+    expect(created.status()).toBe(201);
+    const response = await request.get(
+      `/api/v1/meeting-types/${id}/availability`,
+    );
+    const calendar: { days: { date: string; slots: string[] }[] } =
+      await response.json();
+    const day = calendar.days.filter((item) => item.slots.length >= 2)[
+      ["chromium", "firefox", "webkit"].indexOf(testInfo.project.name) +
+        (outcome === "confirmed" ? 3 : 6)
+    ];
+    expect(day).toBeDefined();
+    if (!day) return;
+    const nextSlot = day.slots.find(
+      (slot) => Date.parse(slot) >= Date.parse(day.slots[0]) + 60 * 60_000,
+    );
+    expect(nextSlot).toBeDefined();
+    if (!nextSlot) return;
+    await page.goto(`/meeting-types/${id}`);
+    await page.getByRole("button", { name: day.date }).click();
+    await page
+      .getByRole("button", { name: day.slots[0].slice(11, 16), exact: true })
+      .click();
+    await page.getByLabel("Имя").fill("Гость");
+    await page.getByLabel("Email").fill("refresh@example.com");
+    await page.route(
+      `**/api/v1/meeting-types/${id}/availability`,
+      (route) => route.abort(),
+      { times: 1 },
+    );
+    await page.getByRole("button", { name: "Записаться" }).click();
+    const error = page.getByText("Не удалось загрузить доступное время");
+    await expect(error).toBeVisible();
+    await page
+      .getByRole("button", { name: nextSlot.slice(11, 16), exact: true })
+      .click();
+    if (outcome === "conflict") {
+      const reserved = await request.post("/api/v1/bookings", {
+        data: {
+          meetingTypeId: id,
+          start: nextSlot,
+          guestName: "Другой гость",
+          guestEmail: "other@example.com",
+        },
+      });
+      expect(reserved.status()).toBe(201);
+    }
+    await page.getByRole("button", { name: "Записаться" }).click();
+    await expect(
+      page.getByText(
+        outcome === "confirmed"
+          ? "Запись подтверждена"
+          : "Это время уже занято. Выберите другое время.",
+      ),
+    ).toBeVisible();
+    await expect(error).not.toBeVisible();
+    await expect(
+      page.getByRole("button", {
+        name: nextSlot.slice(11, 16),
+        exact: true,
+      }),
+    ).toHaveCount(0);
+  });
+}
