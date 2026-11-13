@@ -23,13 +23,26 @@ export function MeetingTypePage({ id }: MeetingTypePageProps) {
     new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Moscow" }),
   );
   useEffect(() => {
-    const timer = window.setInterval(() => {
-      setDay(
-        new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Moscow" }),
+    let timer: number;
+    const updateDay = () => {
+      const now = new Date();
+      setDay(now.toLocaleDateString("en-CA", { timeZone: "Europe/Moscow" }));
+      window.clearTimeout(timer);
+      const moscowTime = now.getTime() + 3 * 60 * 60_000;
+      timer = window.setTimeout(
+        updateDay,
+        Math.min(30_000, 86_400_000 - (moscowTime % 86_400_000)),
       );
-    }, 30_000);
+    };
+    updateDay();
+    window.addEventListener("focus", updateDay);
+    window.addEventListener("pageshow", updateDay);
+    document.addEventListener("visibilitychange", updateDay);
     return () => {
-      window.clearInterval(timer);
+      window.clearTimeout(timer);
+      window.removeEventListener("focus", updateDay);
+      window.removeEventListener("pageshow", updateDay);
+      document.removeEventListener("visibilitychange", updateDay);
     };
   }, []);
   return <MeetingTypeContent key={`${id}:${day}`} id={id} />;
