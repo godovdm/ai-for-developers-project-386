@@ -125,3 +125,38 @@ for (const outcome of ["confirmed", "conflict"] as const) {
     ).toHaveCount(0);
   });
 }
+
+test("guest calendar refreshes at Moscow midnight and on return", async ({
+  page,
+  request,
+}, testInfo) => {
+  const id = `midnight-${testInfo.project.name}`;
+  const created = await request.post("/api/v1/meeting-types", {
+    data: {
+      id,
+      name: "Календарь после полуночи",
+      description: "",
+      durationMinutes: 60,
+    },
+  });
+  expect(created.status()).toBe(201);
+  await page.clock.install({ time: new Date("2026-11-13T20:59:59Z") });
+  let date = "2026-11-13";
+  await page.route(
+    `**/api/v1/meeting-types/${id}/availability`,
+    async (route) => {
+      await route.fulfill({ json: { days: [{ date, slots: [] }] } });
+    },
+  );
+  await page.goto(`/meeting-types/${id}`);
+  await expect(page.getByRole("button", { name: date })).toBeVisible();
+  date = "2026-11-14";
+  await page.clock.fastForward(1_000);
+  await expect(page.getByRole("button", { name: date })).toBeVisible();
+  await expect(page.getByRole("button", { name: "2026-11-13" })).toHaveCount(0);
+
+  date = "2026-11-15";
+  await page.clock.setSystemTime(new Date("2026-11-14T21:00:01Z"));
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await expect(page.getByRole("button", { name: date })).toBeVisible();
+});
