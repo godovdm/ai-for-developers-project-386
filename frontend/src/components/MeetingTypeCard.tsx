@@ -1,4 +1,4 @@
-import { Button, Group, Paper, Stack, Text, Title } from "@mantine/core";
+import { Box, Stack, Text, Title } from "@mantine/core";
 import type { MeetingType } from "../api/generated/models/MeetingType";
 import { navigate } from "../router";
 
@@ -7,29 +7,35 @@ interface MeetingTypeCardProps {
 }
 
 export function MeetingTypeCard({ meetingType }: MeetingTypeCardProps) {
+  const titleID = `meeting-type-${meetingType.id}`;
+
   return (
-    <Paper withBorder p="lg" radius="md">
-      <Stack gap="sm" h="100%">
-        <Group justify="space-between" align="flex-start" wrap="nowrap">
-          <Title order={3} size="h4">
-            {meetingType.name}
-          </Title>
-          <Text size="sm" c="dimmed" style={{ whiteSpace: "nowrap" }}>
-            {meetingType.durationMinutes} минут
+    <Box className="meeting-type-card">
+      <Stack className="meeting-type-content" gap="xs" align="flex-start">
+        <Title id={titleID} order={3} size="h4">
+          {meetingType.name}
+        </Title>
+        {meetingType.description && (
+          <Text size="sm" c="dimmed">
+            {meetingType.description}
           </Text>
-        </Group>
-        <Text size="sm" c="dimmed" style={{ flexGrow: 1 }}>
-          {meetingType.description}
+        )}
+        <Text className="duration-badge" size="sm">
+          <span aria-hidden="true">◷</span> {meetingType.durationMinutes} минут
         </Text>
-        <Button
-          variant="default"
-          onClick={() => {
-            navigate(`/meeting-types/${encodeURIComponent(meetingType.id)}`);
-          }}
-        >
-          Выбрать время
-        </Button>
       </Stack>
-    </Paper>
+      <span className="meeting-type-arrow" aria-hidden="true">
+        →
+      </span>
+      <button
+        type="button"
+        className="meeting-card-action"
+        aria-label="Выбрать время"
+        aria-describedby={titleID}
+        onClick={() => {
+          navigate(`/meeting-types/${encodeURIComponent(meetingType.id)}`);
+        }}
+      />
+    </Box>
   );
 }

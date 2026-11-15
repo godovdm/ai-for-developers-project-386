@@ -1,8 +1,12 @@
 import {
   Alert,
+  Box,
   Button,
   Container,
+  Group,
   Loader,
+  Paper,
+  SimpleGrid,
   Stack,
   Text,
   TextInput,
@@ -121,7 +125,7 @@ function MeetingTypeContent({ id }: MeetingTypePageProps) {
       : undefined;
 
   return (
-    <Container size="md" py="xl">
+    <Container size="xl" py={{ base: "md", sm: "xl" }}>
       <Stack gap="lg">
         <AppLink to="/">← Все типы встреч</AppLink>
         {state.status === "loading" && (
@@ -138,49 +142,118 @@ function MeetingTypeContent({ id }: MeetingTypePageProps) {
           <Title order={1}>Тип встречи не найден</Title>
         )}
         {meetingType !== undefined && (
-          <Stack gap="sm">
-            <Title order={1}>{meetingType.name}</Title>
-            <Text c="dimmed">{meetingType.description}</Text>
-            <Text>Длительность: {meetingType.durationMinutes} минут</Text>
-            {availabilityError && (
-              <Alert color="red">Не удалось загрузить доступное время</Alert>
-            )}
-            {availability && (
-              <>
-                <Text>Выберите дату (время Москвы)</Text>
-                <div>
-                  {availability.days.map((day) => (
-                    <Button
-                      key={day.date}
-                      variant={selectedDate === day.date ? "filled" : "light"}
-                      onClick={() => {
-                        setSelectedDate(day.date);
-                        setSelectedSlot("");
-                      }}
-                    >
-                      {day.date}
-                    </Button>
-                  ))}
-                </div>
-                <Text>Выберите время</Text>
-                <div>
-                  {availability.days
-                    .find((day) => day.date === selectedDate)
-                    ?.slots.map((slot) => (
+          <Paper className="booking-shell" withBorder radius="lg">
+            <Box className="booking-details">
+              <Stack gap="lg">
+                <Box className="booking-avatar" aria-hidden="true">
+                  Д
+                </Box>
+                <Stack gap="xs">
+                  <Text c="dimmed" fw={600}>
+                    Дмитрий
+                  </Text>
+                  <Title order={1} size="h2">
+                    {meetingType.name}
+                  </Title>
+                </Stack>
+                {meetingType.description && (
+                  <Text c="dimmed">{meetingType.description}</Text>
+                )}
+                <Text className="booking-meta">
+                  <span aria-hidden="true">◷</span>{" "}
+                  {meetingType.durationMinutes} минут
+                </Text>
+                <Text className="booking-meta">
+                  <span aria-hidden="true">◎</span> Europe/Moscow
+                </Text>
+              </Stack>
+            </Box>
+
+            <Box className="booking-calendar">
+              <Group justify="space-between" mb="xl">
+                <Title order={2} size="h3">
+                  Доступные даты
+                </Title>
+                <Text c="dimmed" size="sm">
+                  Время Москвы
+                </Text>
+              </Group>
+              {availabilityError && (
+                <Alert color="red" mb="md">
+                  Не удалось загрузить доступное время
+                </Alert>
+              )}
+              {!availability && !availabilityError && (
+                <Loader aria-label="Загрузка доступного времени" />
+              )}
+              {availability && (
+                <SimpleGrid cols={7} spacing="xs" verticalSpacing="xs">
+                  {availability.days.map((availableDay) => {
+                    const date = new Date(`${availableDay.date}T12:00:00`);
+                    return (
                       <Button
-                        key={slot}
-                        variant={selectedSlot === slot ? "filled" : "light"}
+                        key={availableDay.date}
+                        className="calendar-day"
+                        aria-label={availableDay.date}
+                        variant={
+                          selectedDate === availableDay.date
+                            ? "filled"
+                            : "default"
+                        }
+                        disabled={availableDay.slots.length === 0}
                         onClick={() => {
-                          setConfirmed("");
-                          setSelectedSlot(slot);
+                          setSelectedDate(availableDay.date);
+                          setSelectedSlot("");
                         }}
                       >
-                        {slot.slice(11, 16)}
+                        <span>
+                          {date.toLocaleDateString("ru-RU", {
+                            weekday: "short",
+                          })}
+                        </span>
+                        <strong>{date.getDate()}</strong>
                       </Button>
-                    ))}
-                </div>
-                {availability.days.find((day) => day.date === selectedDate)
-                  ?.slots.length === 0 && <Text>Свободных слотов нет</Text>}
+                    );
+                  })}
+                </SimpleGrid>
+              )}
+            </Box>
+
+            <Box className="booking-times">
+              <Title order={2} size="h3" mb="lg">
+                {selectedDate
+                  ? new Date(`${selectedDate}T12:00:00`).toLocaleDateString(
+                      "ru-RU",
+                      {
+                        weekday: "long",
+                        day: "numeric",
+                        month: "long",
+                      },
+                    )
+                  : "Выберите дату"}
+              </Title>
+              <Stack gap="sm">
+                {availability?.days
+                  .find((availableDay) => availableDay.date === selectedDate)
+                  ?.slots.map((slot) => (
+                    <Button
+                      key={slot}
+                      className="time-slot"
+                      variant={selectedSlot === slot ? "filled" : "default"}
+                      onClick={() => {
+                        setConfirmed("");
+                        setSelectedSlot(slot);
+                      }}
+                    >
+                      <span aria-hidden="true" className="availability-dot" />
+                      {slot.slice(11, 16)}
+                    </Button>
+                  ))}
+                {availability?.days.find(
+                  (availableDay) => availableDay.date === selectedDate,
+                )?.slots.length === 0 && (
+                  <Text c="dimmed">Свободных слотов нет</Text>
+                )}
                 {bookingError && <Alert color="red">{bookingError}</Alert>}
                 {confirmed && (
                   <Alert color="green" title="Запись подтверждена">
@@ -189,13 +262,14 @@ function MeetingTypeContent({ id }: MeetingTypePageProps) {
                 )}
                 {selectedSlot && !confirmed && (
                   <form
+                    className="booking-form"
                     onSubmit={(event) => {
                       event.preventDefault();
                       void book();
                     }}
                   >
                     <Stack>
-                      <Text>
+                      <Text size="sm" fw={600}>
                         Выбрано: {selectedSlot.slice(0, 10)}{" "}
                         {selectedSlot.slice(11, 16)} (Москва)
                       </Text>
@@ -216,15 +290,19 @@ function MeetingTypeContent({ id }: MeetingTypePageProps) {
                         }}
                         required
                       />
-                      <Button type="submit" loading={submitting}>
+                      <Button
+                        className="app-primary"
+                        type="submit"
+                        loading={submitting}
+                      >
                         Записаться
                       </Button>
                     </Stack>
                   </form>
                 )}
-              </>
-            )}
-          </Stack>
+              </Stack>
+            </Box>
+          </Paper>
         )}
       </Stack>
     </Container>

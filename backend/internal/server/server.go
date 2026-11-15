@@ -34,10 +34,49 @@ func New() http.Handler {
 	return NewWithClock(time.Now)
 }
 
+// NewWithDefaults returns the calendar handler with built-in meeting types.
+func NewWithDefaults() http.Handler {
+	store := meeting.NewMemory()
+	for _, meetingType := range []meeting.Type{
+		{
+			ID:          "meeting-30",
+			Name:        "Встреча на 30 минут",
+			Description: "Короткая встреча для знакомства и обсуждения вопросов",
+			Duration:    meeting.DurationThirty,
+		},
+		{
+			ID:          "meeting-60",
+			Name:        "Встреча на 60 минут",
+			Description: "Подробная встреча для глубокого обсуждения",
+			Duration:    meeting.DurationSixty,
+		},
+	} {
+		if !store.CreateWithID(meetingType) {
+			panic("duplicate built-in meeting type ID: " + meetingType.ID)
+		}
+	}
+
+	return newHandler(
+		store,
+		time.Now,
+	)
+}
+
 // NewWithClock returns the calendar handler using the supplied clock.
 func NewWithClock(now func() time.Time) http.Handler {
 	store := meeting.NewMemory()
-	return generated.Handler(server{meetingTypes: store, v1: store, now: now})
+	return newHandler(
+		store,
+		now,
+	)
+}
+
+func newHandler(store *meeting.Memory, now func() time.Time) http.Handler {
+	return generated.Handler(server{
+		meetingTypes: store,
+		v1:           store,
+		now:          now,
+	})
 }
 
 func (server) GetHealth(w http.ResponseWriter, _ *http.Request) {

@@ -13,7 +13,7 @@ import (
 
 func main() {
 	mux := http.NewServeMux()
-	mux.Handle("/api/", server.New())
+	mux.Handle("/api/", server.NewWithDefaults())
 	dir := os.Getenv("FRONTEND_DIR")
 	if dir == "" {
 		dir = "../frontend/dist"

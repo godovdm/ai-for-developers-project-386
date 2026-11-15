@@ -33,6 +33,57 @@ func TestListMeetingTypesEmpty(t *testing.T) {
 	}
 }
 
+func TestNewWithDefaultsListsBuiltInMeetingTypes(t *testing.T) {
+	rec := request(
+		t,
+		NewWithDefaults(),
+		http.MethodGet,
+		"/api/v1/meeting-types",
+		"",
+	)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusOK)
+	}
+
+	var body generated.MeetingTypeListV1
+	decode(t, rec, &body)
+	want := []generated.MeetingTypeV1{
+		{
+			Id:              "meeting-30",
+			Name:            "Встреча на 30 минут",
+			Description:     "Короткая встреча для знакомства и обсуждения вопросов",
+			DurationMinutes: generated.MeetingDuration(30),
+		},
+		{
+			Id:              "meeting-60",
+			Name:            "Встреча на 60 минут",
+			Description:     "Подробная встреча для глубокого обсуждения",
+			DurationMinutes: generated.MeetingDuration(60),
+		},
+	}
+	if len(body.Items) != len(want) {
+		t.Fatalf("items length = %d, want %d", len(body.Items), len(want))
+	}
+	for index := range want {
+		if body.Items[index] != want[index] {
+			t.Errorf("items[%d] = %+v, want %+v", index, body.Items[index], want[index])
+		}
+	}
+
+	for _, item := range want {
+		rec = request(
+			t,
+			NewWithDefaults(),
+			http.MethodGet,
+			"/api/v1/meeting-types/"+item.Id+"/availability",
+			"",
+		)
+		if rec.Code != http.StatusOK {
+			t.Errorf("availability for %q status = %d, want %d", item.Id, rec.Code, http.StatusOK)
+		}
+	}
+}
+
 func TestCreateAndListMeetingTypes(t *testing.T) {
 	handler := New()
 	rec := request(t, handler, http.MethodPost, "/api/meeting-types",
