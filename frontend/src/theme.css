@@ -2,6 +2,238 @@ body {
   background-color: var(--mantine-color-body);
 }
 
+.public-profile {
+  padding: clamp(2rem, 5vw, 4rem);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.profile-avatar {
+  width: 7rem;
+  height: 7rem;
+  margin-bottom: 0.5rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg, #343a40, #141517);
+  color: #fff;
+  font-size: 2.5rem;
+  font-weight: 700;
+}
+
+.meeting-type-list {
+  overflow: hidden;
+}
+
+.meeting-type-card {
+  position: relative;
+  width: 100%;
+  min-height: 11rem;
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  border-bottom: 1px solid var(--mantine-color-default-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  color: var(--mantine-color-text);
+  text-align: left;
+  transition: background-color 180ms ease;
+}
+
+.meeting-type-card:last-child {
+  border-bottom: 0;
+}
+
+.meeting-type-card:hover,
+.meeting-type-card:has(.meeting-card-action:focus-visible) {
+  background: var(--mantine-color-default-hover);
+}
+
+.meeting-type-card:has(.meeting-card-action:focus-visible) {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: -2px;
+}
+
+.meeting-type-content,
+.meeting-type-arrow {
+  pointer-events: none;
+}
+
+.meeting-card-action {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.duration-badge {
+  padding: 0.15rem 0.45rem;
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: 0.5rem;
+  color: var(--mantine-color-dimmed);
+  line-height: 1.2;
+}
+
+.meeting-type-arrow {
+  flex: 0 0 auto;
+  opacity: 0;
+  transform: translateX(-0.75rem);
+  font-size: 2rem;
+  line-height: 1;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.meeting-type-card:hover .meeting-type-arrow,
+.meeting-type-card:has(.meeting-card-action:focus-visible) .meeting-type-arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .meeting-type-card,
+  .meeting-type-arrow {
+    transition: none;
+  }
+}
+
+.booking-shell {
+  display: grid;
+  grid-template-columns: minmax(15rem, 0.85fr) minmax(25rem, 1.5fr) minmax(
+      17rem,
+      0.9fr
+    );
+  min-height: 42rem;
+  overflow: hidden;
+}
+
+.booking-details,
+.booking-calendar,
+.booking-times {
+  padding: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+.booking-details,
+.booking-calendar {
+  border-right: 1px solid var(--mantine-color-default-border);
+}
+
+.booking-avatar {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--mantine-color-default-hover);
+  font-weight: 700;
+}
+
+.booking-meta {
+  color: var(--mantine-color-dimmed);
+  font-weight: 500;
+}
+
+.calendar-day {
+  height: 5.25rem;
+  padding: 0.5rem;
+}
+
+.calendar-day .mantine-Button-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.calendar-day span {
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.calendar-day strong {
+  font-size: 1.25rem;
+}
+
+.time-slot {
+  min-height: 3.5rem;
+  font-size: 1rem;
+}
+
+.time-slot .mantine-Button-label {
+  gap: 0.75rem;
+}
+
+.availability-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--mantine-color-teal-5);
+}
+
+.booking-form {
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--mantine-color-default-border);
+}
+
+@media (max-width: 74em) {
+  .booking-shell {
+    grid-template-columns: minmax(14rem, 0.8fr) minmax(25rem, 1.4fr);
+  }
+
+  .booking-calendar {
+    border-right: 0;
+  }
+
+  .booking-times {
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--mantine-color-default-border);
+  }
+}
+
+@media (max-width: 48em) {
+  .public-profile {
+    padding: 1.5rem;
+  }
+
+  .profile-avatar {
+    width: 5rem;
+    height: 5rem;
+  }
+
+  .meeting-type-card {
+    min-height: 9rem;
+  }
+
+  .meeting-type-arrow {
+    opacity: 1;
+    transform: none;
+  }
+
+  .booking-shell {
+    display: block;
+  }
+
+  .booking-details,
+  .booking-calendar {
+    border-right: 0;
+    border-bottom: 1px solid var(--mantine-color-default-border);
+  }
+
+  .booking-times {
+    border-top: 0;
+  }
+
+  .calendar-day {
+    height: 4.25rem;
+    padding-inline: 0.25rem;
+  }
+}
+
 /* The main action is dark in the light theme and light in the dark theme. */
 .app-primary {
   --button-bg: #1a1b1e;
