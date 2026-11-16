@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.3.0](https://github.com/godovdm/ai-for-developers-project-386/compare/meeting-calendar-v0.2.0...meeting-calendar-v0.3.0) (2026-11-16)
+
+
+### Features
+
+* add Docker support ([751252d](https://github.com/godovdm/ai-for-developers-project-386/commit/751252d81086f0b8cecb7411f3e6e87040c61884))
+* добавить запуск через Docker ([1c16130](https://github.com/godovdm/ai-for-developers-project-386/commit/1c16130c85d956db81398dfe2b7416adfba66e24))
+* обновить публичную запись и добавить типы встреч ([396fcbd](https://github.com/godovdm/ai-for-developers-project-386/commit/396fcbdcd6184bcad84beb0ef0ed6b9b9b2160e4))
+* обновить публичную запись и добавить типы встреч ([703ea80](https://github.com/godovdm/ai-for-developers-project-386/commit/703ea80e29bee1aeb0af98e049ef7027f8d65da7))
+
+
+### Bug Fixes
+
+* detect system clock changes in guest calendar ([8611f60](https://github.com/godovdm/ai-for-developers-project-386/commit/8611f60384f64bcb6d680ee25532a1953ae7989f))
+* **docker:** учитывать настройки pnpm workspace ([b009946](https://github.com/godovdm/ai-for-developers-project-386/commit/b0099465cca871dcc92663324b705bd04542d4d6))
+* refresh guest calendar at Moscow midnight ([5a44639](https://github.com/godovdm/ai-for-developers-project-386/commit/5a446392ee5532f432c3bdb21a9cfd15da53fcd0))
+* обновлять окно записи при смене дня ([b8c586f](https://github.com/godovdm/ai-for-developers-project-386/commit/b8c586f3fc0bff56be29dfab55293b0a88ef4716))
+* сбрасывать ошибку после загрузки слотов ([7fc735e](https://github.com/godovdm/ai-for-developers-project-386/commit/7fc735e312ac6b40941ced62bcb4d3919a198835))
+* уточнить инструкции и исправить окружение проверок ([2d583f2](https://github.com/godovdm/ai-for-developers-project-386/commit/2d583f236356cb1f76e2751f4c332931cb098912))
+* уточнить инструкции и исправить окружение проверок ([#25](https://github.com/godovdm/ai-for-developers-project-386/issues/25)) ([72e01af](https://github.com/godovdm/ai-for-developers-project-386/commit/72e01afa28646b4f829f0ac1141d8f3ffe34b7d8))
+
 ## [0.2.0](https://github.com/godovdm/ai-for-developers-project-386/compare/meeting-calendar-v0.1.0...meeting-calendar-v0.2.0) (2026-11-13)
 
 ### Features
