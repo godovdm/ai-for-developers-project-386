@@ -14,9 +14,21 @@
 - Маленькие дифы: один файл → тесты → следующий файл
 - Используй субагентов для исследования кодовой базы
 - Сообщения коммитов оформляй по Conventional Commits: `type(scope): описание` (scope необязателен).
+- Каждый коммит реализации и исправлений связывай с GitHub issue: указывай `#номер` в заголовке или теле коммита.
 - Перед завершением изменений запускай `mise --locked run check` и добивайся успешного результата.
 - Не редактируй вручную сгенерированные `mise.lock` и `.mise/locks/`.
 - Не отключай правила проверок ради прохождения: узкое исключение с причиной требует решения человека.
+
+## Запуск и проверки
+
+Команды выполняются из корня проекта, если не указано иное:
+
+1. Подготовка: `mise install`, `mise exec -- pnpm install --frozen-lockfile`, `mise exec -- pnpm build`.
+2. Сервер: `(cd backend && mise exec -- go run ./cmd/server)`; для разработки клиента отдельно: `mise exec -- pnpm dev`.
+3. Установи браузеры: `mise exec -- pnpm exec playwright install chromium firefox webkit`.
+4. Тесты и линтеры: `mise --locked run check` (как в CI). Отдельные проверки: `mise --locked run check:backend`, `check:frontend`, `check:api`, `check:e2e` и `check:docs`; для каждой задачи повторяй полный префикс `mise --locked run`.
+
+TypeSpec в `api/` — источник API. После его изменения выполни генерацию в порядке из раздела README «Для генерации и проверки артефактов»: OpenAPI `api/generated/openapi.yaml`, Go API `backend/internal/api/generated/api.gen.go`, TypeScript SDK `frontend/src/api/generated/`, затем патч SDK и проверку генерации. Не редактируй эти сгенерированные артефакты вручную.
 
 ## Agents
 

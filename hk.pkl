@@ -15,7 +15,7 @@ hooks {
     ["pre-push"] {
         steps {
             ["check"] {
-                check = "mise --locked run check"
+                check = "MISE_ACTIVATE_AGGRESSIVE=true mise --locked run check"
             }
         }
     }
