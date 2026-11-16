@@ -159,7 +159,7 @@ mise exec -- go run ./cmd/server
 
 ```sh
 mise exec -- pnpm exec playwright install chromium firefox webkit
-mise run check
+mise --locked run check
 ```
 
 В Linux браузерам могут понадобиться системные зависимости: используйте
