@@ -1,0 +1,51 @@
+name: PR browser verification
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Record checked-out SHA
+        run: |
+          mkdir -p browser-evidence
+          git rev-parse HEAD | tee browser-evidence/head-sha.txt
+          test "$(cat browser-evidence/head-sha.txt)" = "$EXPECTED_SHA"
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+      - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5
+        with:
+          version: 2026.10.24
+          cache: false
+      - run: mise exec -- pnpm install --frozen-lockfile
+      - run: mise exec -- pnpm build
+      - run: mise exec -- pnpm exec playwright install --with-deps chromium
+      - name: Check calendar scenarios
+        id: browser
+        run: mise exec -- pnpm exec playwright test e2e/availability.spec.ts e2e/booking-flow.spec.ts --project=chromium --trace=on
+      - name: Record result
+        if: always()
+        env:
+          OUTCOME: ${{ steps.browser.outcome }}
+        run: |
+          mkdir -p browser-evidence
+          printf 'browser test outcome: %s\n' "$OUTCOME" > browser-evidence/result.txt
+      - name: Upload browser evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: browser-evidence-${{ github.event.pull_request.head.sha }}
+          path: |
+            browser-evidence/
+            test-results/
+          if-no-files-found: error
+          retention-days: 14

@@ -1,0 +1,88 @@
+name: Independent PR review
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: read
+  issues: read
+  actions: read
+  checks: read
+  statuses: read
+  pull-requests: write
+
+concurrency:
+  group: independent-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      (github.actor == github.repository_owner ||
+      (github.actor == vars.TRUSTED_PR_BOT && vars.TRUSTED_PR_BOT != '')) &&
+      (github.event.pull_request.user.login == github.repository_owner ||
+      (github.event.pull_request.user.login == vars.TRUSTED_PR_BOT &&
+      vars.TRUSTED_PR_BOT != '' &&
+      startsWith(github.event.pull_request.head.ref, 'opencode/')))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Collect review context
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          mkdir -p .review-context
+          gh pr view "$PR_NUMBER" --json title,body,author,comments,reviews,statusCheckRollup > .review-context/pr.json
+          gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/comments" > .review-context/inline-comments.json
+          git diff "$BASE_SHA...$HEAD_SHA" > .review-context/diff.txt
+          if git cat-file -e "$BASE_SHA:REVIEW.md" 2>/dev/null; then
+            git show "$BASE_SHA:REVIEW.md" > .review-context/criteria.md
+          else
+            cp REVIEW.md .review-context/criteria.md
+          fi
+          python3 - <<'PY'
+          import json, os, re, subprocess
+          from pathlib import Path
+          pr = json.loads(Path('.review-context/pr.json').read_text())
+          body = pr.get('body') or ''
+          numbers = set(re.findall(r'(?<![\w/])#(\d+)', body))
+          repo = re.escape(os.environ['GITHUB_REPOSITORY'])
+          numbers.update(re.findall(r'https://github\.com/' + repo + r'/issues/(\d+)', body))
+          with Path('.review-context/issues.txt').open('w') as out:
+              for number in sorted(numbers, key=int):
+                  result = subprocess.run(['gh', 'issue', 'view', number, '--json', 'number,title,body,comments'], text=True, capture_output=True)
+                  out.write(f'Issue #{number}:\n{result.stdout if result.returncode == 0 else "UNAVAILABLE: " + result.stderr}\n')
+          PY
+      - name: Install OpenCode
+        run: npm install --global @opencode/cli@2.3.2
+      - name: Prepare review
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_GO_API_KEY }}
+          OPENCODE_MODEL: ${{ vars.OPENCODE_MODEL }}
+          OPENCODE_CONFIG_PROJECT_DISABLE: "true"
+          OPENCODE_CONFIG_CONTENT: '{"permission":{"*":"deny","read":"allow","glob":"allow","grep":"allow","list":"allow"}}'
+        run: |
+          test -n "$OPENCODE_API_KEY" || { echo 'Missing OPENCODE_GO_API_KEY secret'; exit 1; }
+          test -n "$OPENCODE_MODEL" || { echo 'Missing OPENCODE_MODEL variable'; exit 1; }
+          opencode run --standalone --model "$OPENCODE_MODEL" 'Проведи независимое ревью PR. Прочитай файлы в .review-context, включая построчные комментарии, а также нужные файлы проекта. Сверь реализацию со спецификацией и согласованием человека; недоступные данные и отсутствующие результаты CI укажи явно. Не изменяй файлы. Для каждого подтверждённого дефекта приведи файл, строку, условия и последствия. Если подтверждённых дефектов нет, сообщи об этом прямо.' > "$RUNNER_TEMP/review.txt"
+          test -s "$RUNNER_TEMP/review.txt"
+      - name: Publish review
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          test "$(gh pr view "$PR_NUMBER" --json headRefOid --jq .headRefOid)" = "$HEAD_SHA" || exit 0
+          printf 'Reviewed head SHA: %s\n\n' "$HEAD_SHA" > .review-context/published.txt
+          cat "$RUNNER_TEMP/review.txt" >> .review-context/published.txt
+          gh pr comment "$PR_NUMBER" --body-file .review-context/published.txt
